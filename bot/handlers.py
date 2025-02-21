@@ -62,7 +62,8 @@ def register_handlers(dp: Dispatcher):
         months = int(callback.data.split("_")[1])
         user_id = callback.from_user.id
 
-        conn = sqlite3.connect('users.db')
+        db_path = os.path.join('..', 'data', 'users.db')
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         cursor.execute('SELECT sub_end_date FROM users WHERE user_id = ?', (user_id,))
@@ -133,7 +134,8 @@ def register_handlers(dp: Dispatcher):
 
 # Вспомогательная функция для отображения профиля
 async def show_profile(message: types.Message, user_id: int):
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT username, sub, sub_end_date FROM users WHERE user_id = ?', (user_id,))
     user = cursor.fetchone()

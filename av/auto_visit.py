@@ -1,13 +1,12 @@
+import os
 import sqlite3
 
 import requests
 from re import search
-import datetime as dt
 # from time import time
 
 
 import config
-import data
 
 
 class System:
@@ -32,7 +31,7 @@ class System:
         week_zan = int(match_week.group(1)) if match_week else None
         return id_zan, week_zan
 
-    def auth(self, session, email, password):
+    def auto(self, session, email, password):
         try:
             session.get(config.base_url, headers=config.headers)
             # Авторизация
@@ -77,7 +76,7 @@ class System:
 
     def run(self, email, password):
         with requests.Session() as session:
-            sign_in, mes = self.auth(session, email, password)
+            sign_in, mes = self.auto(session, email, password)
             print(mes)
             # self.check_correct_requests(sign_in, "Вход")
 
@@ -88,6 +87,13 @@ class System:
 
 
 if __name__ == "__main__":
-
     system = System()
-    system.run(data.payload["users"], data.payload["parole"])
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT e_mail, password FROM users')
+    users = cursor.fetchall()
+    conn.close()
+    while True:
+        for email, password in users:
+            system.run(email, password)

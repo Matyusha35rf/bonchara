@@ -1,5 +1,5 @@
-import csv
 import datetime as dt
+import os
 import time
 import sqlite3
 
@@ -55,7 +55,8 @@ if __name__ == "__main__":
     app = App()
     start = time.time()
     while True:
-        app.run("users.db")
+        db_path = os.path.join('..', 'data', 'users.db')
+        app.run(db_path)
 
     # finish = time.time()
     # print(finish - start)
