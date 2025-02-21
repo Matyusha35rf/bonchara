@@ -1,3 +1,5 @@
+import os
+
 import requests
 from aiogram import types, Dispatcher
 from aiogram.fsm.context import FSMContext

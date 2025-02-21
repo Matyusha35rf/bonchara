@@ -27,7 +27,8 @@ def init_db():
 
 
 def save_to_db(user_id: int, username: str, email: str, password: str):
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT OR REPLACE INTO users (user_id, username, e_mail, password)
@@ -38,7 +39,8 @@ def save_to_db(user_id: int, username: str, email: str, password: str):
 
 
 def toggle_availability(user_id: int) -> bool:
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT is_available FROM users WHERE user_id = ?', (user_id,))
     current_state = cursor.fetchone()[0]
@@ -50,7 +52,8 @@ def toggle_availability(user_id: int) -> bool:
 
 
 def toggle_notifications(user_id: int) -> bool:
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT notifications FROM users WHERE user_id = ?', (user_id,))
     current_state = cursor.fetchone()[0]
@@ -62,7 +65,8 @@ def toggle_notifications(user_id: int) -> bool:
 
 
 def toggle_button_notifications(user_id: int) -> bool:
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT button_notifications FROM users WHERE user_id = ?', (user_id,))
     current_state = cursor.fetchone()[0]
@@ -74,7 +78,8 @@ def toggle_button_notifications(user_id: int) -> bool:
 
 
 def delete_account(user_id: int):
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
     conn.commit()
@@ -82,7 +87,8 @@ def delete_account(user_id: int):
 
 
 def is_subscription_active(user_id: int) -> bool:
-    conn = sqlite3.connect('users.db')
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT sub, sub_end_date FROM users WHERE user_id = ?', (user_id,))
     user = cursor.fetchone()

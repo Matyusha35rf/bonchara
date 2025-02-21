@@ -31,7 +31,8 @@ class System:
         week_zan = int(match_week.group(1)) if match_week else None
         return id_zan, week_zan
 
-    def auto(self, session, email, password):
+    @staticmethod
+    def auto(session, email, password):
         try:
             session.get(config.base_url, headers=config.headers)
             # Авторизация
@@ -39,12 +40,14 @@ class System:
                 'users': email,  # Замените на ваш логин
                 'parole': password,  # Замените на ваш пароль
             }
+            print(0)
             auth_response = session.post(
                 config.login_url,
                 data=payload,
                 headers=config.headers,
                 allow_redirects=False
             )
+            print(1)
             if auth_response.status_code == 200 and auth_response.text == "1":
                 return True, "Вход выполнен"
             else:
@@ -76,7 +79,7 @@ class System:
 
     def run(self, email, password):
         with requests.Session() as session:
-            sign_in, mes = self.auto(session, email, password)
+            sign_in, mes = system.auto(session, email, password)
             print(mes)
             # self.check_correct_requests(sign_in, "Вход")
 
