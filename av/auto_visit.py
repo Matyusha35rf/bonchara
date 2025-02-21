@@ -40,14 +40,12 @@ class System:
                 'users': email,  # Замените на ваш логин
                 'parole': password,  # Замените на ваш пароль
             }
-            print(0)
             auth_response = session.post(
                 config.login_url,
                 data=payload,
                 headers=config.headers,
                 allow_redirects=False
             )
-            print(1)
             if auth_response.status_code == 200 and auth_response.text == "1":
                 return True, "Вход выполнен"
             else:
