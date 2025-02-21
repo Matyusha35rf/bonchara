@@ -1,17 +1,17 @@
-import os
 import sqlite3
 
 import requests
 from re import search
+import datetime as dt
 # from time import time
 
-import config
 
+import config
+import data
 
 
 class System:
-    @staticmethod
-    def check_correct_requests(var, section):
+    def check_correct_requests(self, var, section):
         if var:
             print(f"{section}: Все ок")
         if not var:
@@ -19,8 +19,7 @@ class System:
         elif var is None:
             print(f"{section}: Какая-то ошибка")
 
-    @staticmethod
-    def get_id_zan(session):
+    def get_id_zan(self, session):
         rasp = session.get(
             config.target_url,
             headers=config.headers
@@ -33,8 +32,7 @@ class System:
         week_zan = int(match_week.group(1)) if match_week else None
         return id_zan, week_zan
 
-    @staticmethod
-    def auto(session, email, password):
+    def auth(self, session, email, password):
         try:
             session.get(config.base_url, headers=config.headers)
             # Авторизация
@@ -49,19 +47,20 @@ class System:
                 allow_redirects=False
             )
             if auth_response.status_code == 200 and auth_response.text == "1":
-                return True
+                return True, "Вход выполнен"
             else:
-                return False
+                return False, "Вход невыполнен"
         except Exception as e:
             print(e)
-            return None
+            return None, "Ошибка при входе"
 
     def visiting(self, session):
         try:
             id_zan, week_zan = self.get_id_zan(session)
             if id_zan is None or week_zan is None:
-                params = {"open": 1, "rasp": 0, "week": 0}
+                return False, "Нет открытых занятий"
             else:
+                print(id_zan, week_zan)
                 params = {"open": 1, "rasp": int(id_zan), "week": int(week_zan)}
             target_response = session.get(
                 config.target_url,
@@ -70,29 +69,24 @@ class System:
             )
             if target_response.status_code == 200:
                 print(target_response.status_code, target_response.text)
-                return True
-            return False
+                return True, "Отмечен"
+            return False, "Открыт, но не отмечен"
         except Exception as e:
             print(e)
-            return None
+            return None, "Ошибка при отметке"
 
     def run(self, email, password):
         with requests.Session() as session:
-            sign_in = self.auto(session, email, password)
-            self.check_correct_requests(sign_in, "Вход")
+            sign_in, mes = self.auth(session, email, password)
+            print(mes)
+            # self.check_correct_requests(sign_in, "Вход")
 
-            visit = self.visiting(session)
-            self.check_correct_requests(visit, "Отметка")
+            visit, mes = self.visiting(session)
+            print(mes)
+            # self.check_correct_requests(visit, "Отметка")
+        return visit, mes
 
 
 if __name__ == "__main__":
     system = System()
-    db_path = os.path.join('..', 'data', 'users.db')
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('SELECT e_mail, password FROM users')
-    users = cursor.fetchall()
-    conn.close()
-    while True:
-        for email, password in users:
-            system.run(email, password)
+    system.run(data.payload["users"], data.payload["parole"])
