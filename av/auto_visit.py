@@ -86,6 +86,7 @@ class System:
 
 
 if __name__ == "__main__":
+
     system = System()
     db_path = os.path.join('..', 'data', 'users.db')
     conn = sqlite3.connect(db_path)
