@@ -14,6 +14,3 @@ headers = {
 
 # токен бота
 api_token = '8179996730:AAFrP2nOYQhZCeGugEDJRxHwQjAVe3jWcIg'
-
-# имя файла с клиентами
-db_file = "users.db"

@@ -19,7 +19,7 @@ def init_db():
             is_available BOOLEAN DEFAULT 0,
             notifications BOOLEAN DEFAULT 0,
             button_notifications BOOLEAN DEFAULT 0,
-            last_mark TEXT
+            marked TEXT
         )
     ''')
     conn.commit()
