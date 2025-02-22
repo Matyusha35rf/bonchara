@@ -42,7 +42,7 @@ class App:
         con, cur = self.read_db(filename)
         users = self.get_users(con)
 
-        self.marked_off(con,cur)
+        self.marked_off(con, cur)
         for user in users:
             if user['sub'] and user['is_available'] and not user['marked']:
                 status, mes = self.system.run(user["e_mail"], user["password"])

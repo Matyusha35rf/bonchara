@@ -14,6 +14,7 @@ from states import AuthStates
 from av import auto_visit
 from datetime import datetime, timedelta
 import sqlite3
+import config
 
 
 # Функция для регистрации всех обработчиков
@@ -56,41 +57,29 @@ def register_handlers(dp: Dispatcher):
 
     # Оформление подписки
     @dp.message(lambda m: m.text == "📝 Оформить подписку")
-    async def subscription_message(message: types.Message):
-        await message.answer("📅 Выберите количество месяцев подписки:", reply_markup=get_subscription_months_keyboard())
-        await message.answer("🔙 Нажмите, чтобы вернуться в профиль:", reply_markup=get_back_to_profile_keyboard())
+    async def subscription_message(message: types.Message, state: FSMContext):
+        await message.answer("📅 Введите ключ:")
+        await state.set_state(AuthStates.waiting_for_key)
 
-    @dp.callback_query(lambda c: c.data.startswith("subscribe_"))
-    async def handle_subscription(callback: types.CallbackQuery):
-        months = int(callback.data.split("_")[1])
-        user_id = callback.from_user.id
-
-        db_path = os.path.join('..', 'data', 'users.db')
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        cursor.execute('SELECT sub_end_date FROM users WHERE user_id = ?', (user_id,))
-        result = cursor.fetchone()
-        current_end_date = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S') if result and result[0] else None
-
-        now = datetime.now()
-        if current_end_date and current_end_date > now:
-            new_end_date = current_end_date + timedelta(days=30 * months)
-        else:
-            new_end_date = now + timedelta(days=30 * months)
-
-        cursor.execute('''
-            UPDATE users 
-            SET sub = 1, sub_end_date = ?
-            WHERE user_id = ?
-        ''', (new_end_date.strftime('%Y-%m-%d %H:%M:%S'), user_id))
-
-        conn.commit()
-        conn.close()
-
-        await callback.message.edit_text(f"✅ Подписка успешно продлена на {months} месяцев.")
-        await show_profile(callback.message, user_id)
-        await callback.answer()
+    @dp.message(AuthStates.waiting_for_key)
+    async def handle_subscription(message: types.Message, state: FSMContext):
+        if message.text in config.keys:
+            config.keys.remove(message.text)
+            user_id = message.from_user.id
+            await message.answer("Ключ верный")
+            db_path = os.path.join('..', 'data', 'users.db')
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            query = '''
+                UPDATE users
+                SET sub = ?
+                WHERE user_id = ?
+            '''
+            data = await state.get_data()
+            cursor.execute(query, (True, user_id))
+            conn.commit()
+            conn.close()
+        await state.clear()
 
     # настройки
     @dp.message(lambda m: m.text == "⚙️ Настройки")
