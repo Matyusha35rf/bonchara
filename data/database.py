@@ -1,5 +1,6 @@
-import os
 import sqlite3
+import os
+from datetime import datetime, timedelta
 
 
 def init_db():
@@ -97,7 +98,7 @@ def reset_ids():
     conn.close()
 
 
-def delete_account(user_id: int):
+def del_acc(user_id: int):
     print(0)
     db_path = os.path.join('..', 'data', 'users.db')
     conn = sqlite3.connect(db_path)
@@ -108,7 +109,52 @@ def delete_account(user_id: int):
     reset_ids()
 
 
-def is_subscription_active(user_id: int) -> bool:
+# активация/продление подписки
+def sub(user_id: int, months: int) -> bool:
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    try:
+        # Получаем текущую дату окончания подписки
+        cursor.execute('SELECT sub_end_date FROM users WHERE user_id = ?', (user_id,))
+
+        result = cursor.fetchone()
+        if result is None:
+            # Если пользователь не найден, возвращаем False
+            return False
+
+        current_sub_end_date = result[0]  # Текущая дата окончания подписки
+
+        # Вычисляем новую дату окончания подписки
+        if current_sub_end_date:
+            current_date = datetime.strptime(current_sub_end_date, '%Y-%m-%d')
+        else:
+            current_date = datetime.now()
+            sub_activ(user_id)
+
+        # Добавляем количество месяцев (30 дней * months)
+        new_sub_end_date = current_date + timedelta(days=30 * months)
+
+        # Обновляем дату окончания подписки в базе данных
+        cursor.execute('''
+            UPDATE users
+            SET sub_end_date = ?
+            WHERE user_id = ?
+        ''', (new_sub_end_date.strftime('%Y-%m-%d'), user_id))
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        print(f"Ошибка при обновлении подписки: {e}")
+        return False
+
+    finally:
+        conn.close()
+
+
+def is_sub_activ(user_id: int) -> bool:
     db_path = os.path.join('..', 'data', 'users.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -116,3 +162,25 @@ def is_subscription_active(user_id: int) -> bool:
     user = cursor.fetchone()
     conn.close()
     return user[0]
+
+
+# активация подписки
+def sub_activ(user_id: int) -> bool:
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE users SET sub = ? WHERE user_id = ?', (True, user_id))
+    conn.commit()
+    conn.close()
+    return True
+
+
+# деактивация подписки
+def sub_deactiv(user_id: int) -> bool:
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE users SET sub = ? WHERE user_id = ?', (False, user_id))
+    conn.commit()
+    conn.close()
+    return True

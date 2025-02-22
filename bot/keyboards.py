@@ -22,18 +22,8 @@ def get_profile_keyboard() -> ReplyKeyboardMarkup:
 
 def get_back_to_profile_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="🔙 Назад")]],
+        keyboard=[[KeyboardButton(text="🔙 Назад в профиль")]],
         resize_keyboard=True
-    )
-
-
-def get_subscription_months_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="1 месяц", callback_data="subscribe_1"),
-             InlineKeyboardButton(text="3 месяца", callback_data="subscribe_3"),
-             InlineKeyboardButton(text="6 месяцев", callback_data="subscribe_6")]
-        ]
     )
 
 

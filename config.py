@@ -15,17 +15,6 @@ headers = {
 # токен бота
 api_token = '8179996730:AAFrP2nOYQhZCeGugEDJRxHwQjAVe3jWcIg'
 
-# ключи
-keys = [
-    'aB3dE7fG', 'XyZ9qW2r', 'pL8oK1jU', 'vN4mI6bV', 'tR5eH0cY',
-    'sD2wQ9zX', 'gT7uJ3kO', 'hY8iP4lA', 'oM6nB5vC', 'wE1rT0yU',
-    'zX9cV2bN', 'qW8eR4tY', 'uI7oP3mK', 'lK9jH5gF', 'dS6aF1vG',
-    'mN4bV8cX', 'pO2iL9qA', 'rT5yU1wE', 'hJ7kG3fD', 'vB6nM4cZ',
-    'xQ9wZ2eR', 'yT1uI8oP', 'kL3jH6gF', 'dS7aF2vG', 'mN5bV9cX',
-    'pO3iL0qA', 'rT6yU2wE', 'hJ8kG4fD', 'vB7nM5cZ', 'xQ0wZ3eR',
-    'aC4eF8gH', 'bD5fG9hI', 'cE6gH0jK', 'dF7hJ1kL', 'eG8iK2lM',
-    'fH9jL3mN', 'gI0kM4nO', 'hJ1lN5oP', 'iK2mO6pQ', 'jL3nP7qR',
-    'kM4oQ8rS', 'lN5pR9sT', 'mO6qS0tU', 'nP7rT1uV', 'oQ8sU2vW',
-    'pR9tV3wX', 'qS0uW4xY', 'rT1vX5yZ', 'sU2wY6zA', 'tV3xZ7aB',
-    'uW4yA8bC', 'vX5zB9cD'
-]
+# путь к ключам
+KEYS_FILE_PATH = 'keys.txt'
+

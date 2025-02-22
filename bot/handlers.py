@@ -6,13 +6,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from data.database import save_to_db, toggle_availability, toggle_notifications, toggle_button_notifications, delete_account, \
-    is_subscription_active
-from keyboards import get_main_keyboard, get_profile_keyboard, get_back_to_profile_keyboard, \
-    get_subscription_months_keyboard, get_settings_keyboard, get_connect_keyboard
+from data.database import save_to_db, toggle_availability, toggle_notifications, toggle_button_notifications, \
+    del_acc, is_sub_activ, sub
+from keyboards import get_main_keyboard, get_profile_keyboard, get_back_to_profile_keyboard, get_settings_keyboard, \
+    get_connect_keyboard
 from states import AuthStates
 from av import auto_visit
-from datetime import datetime, timedelta
+from until import check_and_remove_key
+from datetime import datetime
 import sqlite3
 import config
 
@@ -42,7 +43,7 @@ def register_handlers(dp: Dispatcher):
     async def process_password(message: types.Message, state: FSMContext):
         data = await state.get_data()
         with requests.Session() as session:
-            if auto_visit.System().auto(session, data['email'], message.text)[0]:
+            if auto_visit.System().atho(session, data['email'], message.text)[0]:
                 save_to_db(data['user_id'], data['username'], data['email'], message.text)
                 await message.answer("✅ Успешная авторизация!", reply_markup=get_main_keyboard())
             else:
@@ -51,34 +52,51 @@ def register_handlers(dp: Dispatcher):
             await state.clear()
 
     # 📄 Отображение профиля
-    @dp.message(lambda m: m.text == "👤 Профиль")
+    @dp.message(lambda m: m.text == "👤 Профиль" or m.text == "🔙 Назад в профиль")
     async def profile_message(message: types.Message):
-        await show_profile(message, message.from_user.id)
+        db_path = os.path.join('..', 'data', 'users.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT username, sub, sub_end_date FROM users WHERE user_id = ?', (message.from_user.id,))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            username, subscription, sub_end_date = user
+            sub_status = "Активна" if subscription else "Не активна"
+
+            if subscription and sub_end_date:
+                end_date = datetime.strptime(sub_end_date, '%Y-%m-%d')
+                remaining_days = (end_date - datetime.now()).days
+                sub_info = f"📝 Подписка: {sub_status} ({remaining_days} дней)"
+            else:
+                sub_info = f"📝 Подписка: {sub_status}"
+
+            await message.answer(
+                f"👤 Ник: {username}\n{sub_info}",
+                reply_markup=get_profile_keyboard()
+            )
+        else:
+            await message.answer("❌ Профиль не найден.")
 
     # Оформление подписки
     @dp.message(lambda m: m.text == "📝 Оформить подписку")
     async def subscription_message(message: types.Message, state: FSMContext):
-        await message.answer("📅 Введите ключ:")
+        await message.answer("📅 Введите ключ:", reply_markup=get_back_to_profile_keyboard())
         await state.set_state(AuthStates.waiting_for_key)
 
     @dp.message(AuthStates.waiting_for_key)
     async def handle_subscription(message: types.Message, state: FSMContext):
-        if message.text in config.keys:
-            config.keys.remove(message.text)
+        if check_and_remove_key(os.path.join('..', 'keys.txt'), message.text):
+            await message.answer("✅ Верный ключ\n")
             user_id = message.from_user.id
-            await message.answer("Ключ верный")
-            db_path = os.path.join('..', 'data', 'users.db')
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            query = '''
-                UPDATE users
-                SET sub = ?
-                WHERE user_id = ?
-            '''
-            data = await state.get_data()
-            cursor.execute(query, (True, user_id))
-            conn.commit()
-            conn.close()
+            if sub(user_id, 1):
+                await profile_message(message)
+
+        else:
+            await message.answer("❌ Неверный ключ")
+            await profile_message(message)
+
         await state.clear()
 
     # настройки
@@ -99,7 +117,7 @@ def register_handlers(dp: Dispatcher):
     async def toggle_callback(callback: types.CallbackQuery):
         user_id = callback.from_user.id
 
-        if not is_subscription_active(user_id):
+        if not is_sub_activ(user_id):
             await callback.answer("❌ У вас нет активной подписки.", show_alert=True)
             return
 
@@ -119,35 +137,7 @@ def register_handlers(dp: Dispatcher):
     # 🗑️ Удаление аккаунта
     @dp.callback_query(lambda c: c.data == "delete_account")
     async def delete_account_callback(callback: types.CallbackQuery):
-        delete_account(callback.from_user.id)
+        del_acc(callback.from_user.id)
         await callback.message.answer("🗑️ Аккаунт удален. Хотите снова подключиться?",
                                       reply_markup=get_connect_keyboard())
         await callback.answer()
-
-
-# Вспомогательная функция для отображения профиля
-async def show_profile(message: types.Message, user_id: int):
-    db_path = os.path.join('..', 'data', 'users.db')
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('SELECT username, sub, sub_end_date FROM users WHERE user_id = ?', (user_id,))
-    user = cursor.fetchone()
-    conn.close()
-
-    if user:
-        username, sub, sub_end_date = user
-        sub_status = "Активна" if sub else "Не активна"
-
-        if sub and sub_end_date:
-            end_date = datetime.strptime(sub_end_date, '%Y-%m-%d %H:%M:%S')
-            remaining_days = (end_date - datetime.now()).days
-            sub_info = f"📝 Подписка: {sub_status} ({remaining_days} дней)"
-        else:
-            sub_info = f"📝 Подписка: {sub_status}"
-
-        await message.answer(
-            f"👤 Ник: {username}\n{sub_info}",
-            reply_markup=get_profile_keyboard()
-        )
-    else:
-        await message.answer("❌ Профиль не найден.")
