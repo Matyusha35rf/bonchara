@@ -1,8 +1,6 @@
 import os
 import sqlite3
 
-import config
-
 
 def init_db():
     db_path = os.path.join('..', 'data', 'users.db')
@@ -118,4 +116,3 @@ def is_subscription_active(user_id: int) -> bool:
     user = cursor.fetchone()
     conn.close()
     return user[0]
-
