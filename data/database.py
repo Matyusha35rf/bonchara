@@ -1,6 +1,5 @@
 import os
 import sqlite3
-from datetime import datetime
 
 
 def init_db():
@@ -77,26 +76,46 @@ def toggle_button_notifications(user_id: int) -> bool:
     return new_state
 
 
+# обновление айдишников
+def reset_ids():
+    db_path = os.path.join('..', 'data', 'users.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    # Получаем все записи, отсортированные по id
+    cursor.execute('SELECT * FROM users ORDER BY id')
+    users = cursor.fetchall()
+
+    # Обновляем id, начиная с 1
+    for new_id, user in enumerate(users, start=1):
+        old_id = user[0]  # id находится на индексе 0 (первый столбец)
+        cursor.execute('UPDATE users SET id = ? WHERE id = ?', (new_id, old_id))
+
+    # Сбрасываем значение автоинкремента
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name = "users"')
+    cursor.execute('INSERT INTO sqlite_sequence (name, seq) VALUES ("users", ?)', (len(users),))
+    conn.commit()
+    conn.close()
+
+
 def delete_account(user_id: int):
+    print(0)
     db_path = os.path.join('..', 'data', 'users.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
     conn.commit()
     conn.close()
+    reset_ids()
 
 
 def is_subscription_active(user_id: int) -> bool:
     db_path = os.path.join('..', 'data', 'users.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('SELECT sub, sub_end_date FROM users WHERE user_id = ?', (user_id,))
+    cursor.execute('SELECT sub FROM users WHERE user_id = ?', (user_id,))
     user = cursor.fetchone()
     conn.close()
+    return user[0]
 
-    if user:
-        sub, sub_end_date = user
-        if sub and sub_end_date:
-            end_date = datetime.strptime(sub_end_date, '%Y-%m-%d %H:%M:%S')
-            return datetime.now() <= end_date
-    return False
+
+is_subscription_active(1331469795)

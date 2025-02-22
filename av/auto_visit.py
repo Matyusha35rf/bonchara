@@ -31,8 +31,8 @@ class System:
         week_zan = int(match_week.group(1)) if match_week else None
         return id_zan, week_zan
 
-    @staticmethod
-    def auto(session, email, password):
+
+    def auto(self, session, email, password):
         try:
             session.get(config.base_url, headers=config.headers)
             # Авторизация
@@ -77,7 +77,7 @@ class System:
 
     def run(self, email, password):
         with requests.Session() as session:
-            sign_in, mes = system.auto(session, email, password)
+            sign_in, mes = self.auto(session, email, password)
             print(mes)
             # self.check_correct_requests(sign_in, "Вход")
 

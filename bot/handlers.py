@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from database import save_to_db, toggle_availability, toggle_notifications, toggle_button_notifications, delete_account, \
+from data.database import save_to_db, toggle_availability, toggle_notifications, toggle_button_notifications, delete_account, \
     is_subscription_active
 from keyboards import get_main_keyboard, get_profile_keyboard, get_back_to_profile_keyboard, \
     get_subscription_months_keyboard, get_settings_keyboard, get_connect_keyboard
@@ -41,11 +41,12 @@ def register_handlers(dp: Dispatcher):
     async def process_password(message: types.Message, state: FSMContext):
         data = await state.get_data()
         with requests.Session() as session:
-            if auto_visit.System.auto(session, data['email'], message.text):
+            if auto_visit.System().auto(session, data['email'], message.text)[0]:
                 save_to_db(data['user_id'], data['username'], data['email'], message.text)
                 await message.answer("✅ Успешная авторизация!", reply_markup=get_main_keyboard())
             else:
-                await message.answer("❌ Неверные данные. Попробуйте снова.")
+                await message.answer("❌ Неверные данные. Попробуйте снова.", reply_markup=get_connect_keyboard())
+
             await state.clear()
 
     # 📄 Отображение профиля
@@ -91,6 +92,7 @@ def register_handlers(dp: Dispatcher):
         await show_profile(callback.message, user_id)
         await callback.answer()
 
+    # настройки
     @dp.message(lambda m: m.text == "⚙️ Настройки")
     async def settings_message(message: types.Message):
         await message.answer("⚙️ Настройки:", reply_markup=get_settings_keyboard())
