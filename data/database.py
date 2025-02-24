@@ -85,7 +85,6 @@ def reset_ids():
     # Получаем все записи, отсортированные по id
     cursor.execute('SELECT * FROM users ORDER BY id')
     users = cursor.fetchall()
-
     # Обновляем id, начиная с 1
     for new_id, user in enumerate(users, start=1):
         old_id = user[0]  # id находится на индексе 0 (первый столбец)
@@ -97,6 +96,7 @@ def reset_ids():
     conn.commit()
     conn.close()
 
+print(reset_ids())
 
 def del_acc(user_id: int):
     print(0)

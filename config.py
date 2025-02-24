@@ -13,7 +13,7 @@ headers = {
 }
 
 # токен бота
-api_token = '8179996730:AAFrP2nOYQhZCeGugEDJRxHwQjAVe3jWcIg'
+api_token = '7937961121:AAFCfEPZQrUz9hApmnR581AJpJSF4VlWFlc'
 
 # путь к ключам
 KEYS_FILE_PATH = 'keys.txt'
