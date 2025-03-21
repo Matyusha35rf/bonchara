@@ -32,7 +32,7 @@ class System:
         return id_zan, week_zan
 
 
-    def atho(self, session, email, password):
+    def auth(self, session, email, password):
         try:
             session.get(config.base_url, headers=config.headers)
             # Авторизация
@@ -77,12 +77,12 @@ class System:
 
     def run(self, email, password):
         with requests.Session() as session:
-            sign_in, mes = self.atho(session, email, password)
-            print(mes)
+            sign_in, mes = self.auth(session, email, password)
+            # print(mes)
             # self.check_correct_requests(sign_in, "Вход")
 
             visit, mes = self.visiting(session)
-            print(mes)
+            # print(mes)
             # self.check_correct_requests(visit, "Отметка")
         return visit, mes
 

@@ -8,11 +8,11 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from data.database import save_to_db, toggle_availability, toggle_notifications, toggle_button_notifications, \
     del_acc, is_sub_activ, sub
-from keyboards import get_main_keyboard, get_profile_keyboard, get_back_to_profile_keyboard, get_settings_keyboard, \
+from bot.keyboards import get_main_keyboard, get_profile_keyboard, get_back_to_profile_keyboard, get_settings_keyboard, \
     get_connect_keyboard
-from states import AuthStates
+from bot.states import AuthStates
 from av import auto_visit
-from until import check_and_remove_key
+from bot.until import check_and_remove_key
 from datetime import datetime
 import sqlite3
 import config
@@ -43,7 +43,7 @@ def register_handlers(dp: Dispatcher):
     async def process_password(message: types.Message, state: FSMContext):
         data = await state.get_data()
         with requests.Session() as session:
-            if auto_visit.System().atho(session, data['email'], message.text)[0]:
+            if auto_visit.System().auth(session, data['email'], message.text)[0]:
                 save_to_db(data['user_id'], data['username'], data['email'], message.text)
                 await message.answer("✅ Успешная авторизация!", reply_markup=get_main_keyboard())
             else:
@@ -54,7 +54,7 @@ def register_handlers(dp: Dispatcher):
     # 📄 Отображение профиля
     @dp.message(lambda m: m.text == "👤 Профиль" or m.text == "🔙 Назад в профиль")
     async def profile_message(message: types.Message):
-        db_path = os.path.join('..', 'data', 'users.db')
+        db_path = 'data/users.db'
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('SELECT username, sub, sub_end_date FROM users WHERE user_id = ?', (message.from_user.id,))

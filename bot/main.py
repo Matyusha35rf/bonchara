@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from handlers import register_handlers  # Импортируем функцию для регистрации обработчиков
+from bot.handlers import register_handlers  # Импортируем функцию для регистрации обработчиков
 import config
 
 

@@ -2,9 +2,8 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 
-
 def init_db():
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -19,7 +18,7 @@ def init_db():
             is_available BOOLEAN DEFAULT 0,
             notifications BOOLEAN DEFAULT 0,
             button_notifications BOOLEAN DEFAULT 0,
-            marked TEXT
+            marked BOOLEAN DEFAULT 0
         )
     ''')
     conn.commit()
@@ -27,7 +26,7 @@ def init_db():
 
 
 def save_to_db(user_id: int, username: str, email: str, password: str):
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -39,7 +38,7 @@ def save_to_db(user_id: int, username: str, email: str, password: str):
 
 
 def toggle_availability(user_id: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT is_available FROM users WHERE user_id = ?', (user_id,))
@@ -52,7 +51,7 @@ def toggle_availability(user_id: int) -> bool:
 
 
 def toggle_notifications(user_id: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT notifications FROM users WHERE user_id = ?', (user_id,))
@@ -65,7 +64,7 @@ def toggle_notifications(user_id: int) -> bool:
 
 
 def toggle_button_notifications(user_id: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT button_notifications FROM users WHERE user_id = ?', (user_id,))
@@ -79,13 +78,13 @@ def toggle_button_notifications(user_id: int) -> bool:
 
 # обновление айдишников
 def reset_ids():
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     # Получаем все записи, отсортированные по id
     cursor.execute('SELECT * FROM users ORDER BY id')
     users = cursor.fetchall()
-
+    print(users[0])
     # Обновляем id, начиная с 1
     for new_id, user in enumerate(users, start=1):
         old_id = user[0]  # id находится на индексе 0 (первый столбец)
@@ -97,10 +96,11 @@ def reset_ids():
     conn.commit()
     conn.close()
 
+print(reset_ids())
 
 def del_acc(user_id: int):
     print(0)
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
@@ -111,7 +111,7 @@ def del_acc(user_id: int):
 
 # активация/продление подписки
 def sub(user_id: int, months: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -155,7 +155,7 @@ def sub(user_id: int, months: int) -> bool:
 
 
 def is_sub_activ(user_id: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('SELECT sub FROM users WHERE user_id = ?', (user_id,))
@@ -166,7 +166,7 @@ def is_sub_activ(user_id: int) -> bool:
 
 # активация подписки
 def sub_activ(user_id: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('UPDATE users SET sub = ? WHERE user_id = ?', (True, user_id))
@@ -177,7 +177,7 @@ def sub_activ(user_id: int) -> bool:
 
 # деактивация подписки
 def sub_deactiv(user_id: int) -> bool:
-    db_path = os.path.join('..', 'data', 'users.db')
+    db_path = 'data/users.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('UPDATE users SET sub = ? WHERE user_id = ?', (False, user_id))
