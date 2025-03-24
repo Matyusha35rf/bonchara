@@ -1,4 +1,6 @@
 # Игнорировать папку __pycache__ и её содержимое
+av/__pycache__
+__pycache
 __pycache__/
 */__pycache__/
 *.pyc
