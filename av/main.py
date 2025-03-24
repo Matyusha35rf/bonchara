@@ -1,6 +1,4 @@
-import datetime
 import datetime as dt
-import os
 import time
 import sqlite3
 
@@ -48,13 +46,13 @@ class App:
                 if user['sub'] and user['is_available'] and not user['marked']:
                     status, mes = self.system.run(user["e_mail"], user["password"])
                     if status:
-                        self.marked_on(con, cur,user['user_id'])
+                        self.marked_on(con, cur, user['user_id'])
         con.close()
 
 
 if __name__ == "__main__":
     app = App()
-    db_path = 'data/users.db'
+    db_path = '../data/users.db'
     start = time.time()
     con,cur = app.read_db(db_path)
     app.marked_off(con,cur,'Стартовая')
