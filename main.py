@@ -1,7 +1,7 @@
 import csv
 import time
 
-from auto_visit import System
+from av.auto_visit import System
 
 
 class App:

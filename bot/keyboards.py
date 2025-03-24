@@ -1,7 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def main() -> ReplyKeyboardMarkup:
+def get_main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="👤 Профиль")],
@@ -11,7 +11,7 @@ def main() -> ReplyKeyboardMarkup:
     )
 
 
-def profile() -> ReplyKeyboardMarkup:
+def get_profile_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🔙 Назад"), KeyboardButton(text="📝 Оформить подписку")]
@@ -20,14 +20,14 @@ def profile() -> ReplyKeyboardMarkup:
     )
 
 
-def back_to_profile() -> ReplyKeyboardMarkup:
+def get_back_to_profile_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="🔙 Назад в профиль")]],
         resize_keyboard=True
     )
 
 
-def sett() -> InlineKeyboardMarkup:
+def get_settings_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🔄 Вкл/Выкл автопосещение", callback_data="toggle_autovisit")],
         [InlineKeyboardButton(text="🔔 Вкл/Выкл уведомления о следующей паре", callback_data="toggle_notifications")],
@@ -37,7 +37,7 @@ def sett() -> InlineKeyboardMarkup:
     ])
 
 
-def connect() -> InlineKeyboardMarkup:
+def get_connect_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="🔑 Подключиться", callback_data="connect")]]
     )
