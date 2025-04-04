@@ -1,45 +1,101 @@
-import asyncio
-import datetime
 import datetime as dt
-import os
-import sys
 import time
-import sqlite3
+import logging
+from contextlib import contextmanager
 
-from av.auto_visit import System
+from av.auto_visit import System, db_connection
 from bot.send import send_message
-from data.database import read_db, get_users, marked_on, marked_off
+from data.database import connect, get_users, marked_on, marked_off
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("av_main_logs.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('av_main')
 
 
 class App:
     def __init__(self):
         self.system = System()
+        self.con, self.cur = connect()
+        logger.info("Приложение инициализировано")
 
-    def run(self, filename):
-        con, cur = read_db(filename)
-        users = get_users(con)
-        time_now = dt.datetime.now().strftime("%H:%M")
-        if time_now in ["08:50", "10:35", "12:20", "14:35", "16:20", "18:05"]:
-            marked_off(con, cur, time_now)
-            time.sleep(30)
-        else:
-            for user in users:
-                if user['sub'] and user['is_available'] and not user['marked']:
+    def run(self, db_path=None):
+        """
+        Основная функция проверки и отметки пользователей
+        """
+        try:
+            # Получаем список пользователей
+            users = get_users(self.cur)
+            time_now = dt.datetime.now().strftime("%H:%M")
+            
+            # Проверяем, не время ли сбросить отметки
+            reset_times = ["08:50", "10:35", "12:20", "14:35", "16:20", "18:05"]
+            if time_now in reset_times:
+                logger.info(f"Сброс отметок в {time_now}")
+                marked_off(self.con, self.cur, time_now)
+                return  # Завершаем выполнение после сброса отметок
+            
+            # Иначе проверяем каждого пользователя
+            active_users = [u for u in users if u['sub'] and u['is_available'] and not u['marked']]
+            logger.info(f"Проверка {len(active_users)} активных пользователей")
+            
+            for user in active_users:
+                try:
                     status, mes = self.system.run(user["e_mail"], user["password"])
+                    logger.info(f"Пользователь {user['e_mail']}: {mes}")
+                    
                     if status:
-                        marked_on(con, cur, user['user_id'])
-        con.close()
+                        marked_on(self.con, self.cur, user['user_id'])
+                        logger.info(f"Пользователь {user['e_mail']} отмечен")
+                except Exception as e:
+                    logger.error(f"Ошибка при обработке пользователя {user['e_mail']}: {e}")
+            
+        except Exception as e:
+            logger.error(f"Ошибка при выполнении run: {e}")
+        finally:
+            # Не закрываем соединение после каждого запуска, т.к. run вызывается в цикле
+            pass
+
+    def close(self):
+        """Закрытие соединений и ресурсов"""
+        if hasattr(self, 'con') and self.con:
+            self.con.close()
+            logger.info("Соединение с БД закрыто")
 
 
 if __name__ == "__main__":
     app = App()
     db_path = 'data/users.db'
-    start = time.time()
-    con, cur = read_db(db_path)
-    marked_off(con, cur, 'Стартовая')
-    print(f'{start} Автопосещение начал работу')
-    while True:
-        app.run(db_path)
-        time.sleep(15)
-    # finish = time.time()
-    # print(finish - start)
+    start_time = time.time()
+    
+    try:
+        # Инициализация и запуск основного цикла
+        app.con, app.cur = connect()
+        marked_off(app.con, app.cur, 'Стартовая')
+        logger.info(f"Автопосещение начало работу в {dt.datetime.now()}")
+        
+        # Используем обработку исключений для корректного завершения при прерывании
+        try:
+            while True:
+                app.run(db_path)
+                time.sleep(15)  # Пауза между циклами
+        except KeyboardInterrupt:
+            app.con.close()
+            logger.info("Программа остановлена пользователем")
+        except Exception as e:
+            logger.critical(f"Критическая ошибка: {e}")
+            send_message(876644243, f'Критическая ошибка в main.py: {e}')
+        finally:
+            app.close()
+            
+    except Exception as e:
+        logger.critical(f"Ошибка при запуске: {e}")
+    finally:
+        runtime = time.time() - start_time
+        logger.info(f"Общее время работы: {runtime:.2f} сек")

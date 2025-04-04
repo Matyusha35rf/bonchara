@@ -156,21 +156,9 @@ try:
         conn.close()
         return True
 
-
-    def read_db(filename):
-        '''
-        Чтение бд
-        :param filename:
-        :return: conn, cursor
-        '''
-        conn = sqlite3.connect(filename)
-        cursor = conn.cursor()
-        return conn, cursor
-
-
     def get_users(cursor):
         '''
-        Получение списка пользователей из бд
+        Получение списка информации о пользователях из бд
         :param cursor:
         :return: users
         '''
