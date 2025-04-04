@@ -15,3 +15,5 @@ __pycache__/
 *.out
 
 venv
+
+bot_token.py

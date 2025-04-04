@@ -1,5 +1,6 @@
 import csv
 import time
+from dbm import error
 
 from av.auto_visit import System
 
@@ -24,6 +25,10 @@ class App:
                 self.system.run(email, password)
 
 
+def fn() -> (Exception, str):
+    return Exception, 5
+
+
 if __name__ == "__main__":
     app = App()
     start = time.time()
@@ -33,3 +38,4 @@ if __name__ == "__main__":
 
     # finish = time.time()
     # print(finish - start)
+

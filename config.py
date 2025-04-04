@@ -1,5 +1,7 @@
 from urllib.parse import urljoin
 
+import bot_token
+
 # ссылки и хедеры
 base_url = "https://lk.sut.ru/cabinet/"
 login_url = urljoin(base_url, 'lib/autentificationok.php')
@@ -13,7 +15,7 @@ headers = {
 }
 
 # токен бота
-api_token = '7937961121:AAFCfEPZQrUz9hApmnR581AJpJSF4VlWFlc'
+api_token = bot_token.token
 
 # путь к ключам
 KEYS_FILE_PATH = 'keys.txt'

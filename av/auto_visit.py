@@ -9,7 +9,7 @@ from re import search
 
 from bot.send import send_message
 import config
-from lk.func import auth
+from lk.lk_func import auth
 from lk.av_func import visiting
 
 

@@ -1,18 +1,21 @@
 import os
 
 import requests
+
 from aiogram import types, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from data import database
-from bot import keyboards
 
+from data import database
+
+from bot import keyboards
 from bot.states import AuthStates
-from av import auto_visit
 from bot.until import check_and_remove_key
+
 from datetime import datetime
 
+from lk import lk_func
 
 # Функция для регистрации всех обработчиков
 def register_handlers(dp: Dispatcher):
@@ -39,7 +42,7 @@ def register_handlers(dp: Dispatcher):
     async def process_password(message: types.Message, state: FSMContext):
         data = await state.get_data()
         with requests.Session() as session:
-            if auto_visit.auth(session, data['email'], message.text)[0]:
+            if lk_func.auth(session, data['email'], message.text)[0]:
                 database.save_to_db(data['user_id'], data['username'], data['email'], message.text)
                 await message.answer("✅ Успешная авторизация!", reply_markup=keyboards.main())
             else:
