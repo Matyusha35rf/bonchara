@@ -3,7 +3,7 @@ import time
 import logging
 from contextlib import contextmanager
 
-from av.auto_visit import System, db_connection
+from av.auto_visit import System
 from bot.send import send_message
 from data.database import connect, get_users, marked_on, marked_off
 
@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("av_main_logs.log"),
+        logging.FileHandler("av_main_logs.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -23,7 +23,35 @@ class App:
     def __init__(self):
         self.system = System()
         self.con, self.cur = connect()
-        logger.info("Приложение инициализировано")
+        # logger.info("Приложение инициализировано")
+
+    def check_missed_reset_time(self, time_now, reset_times):
+        """
+        Проверяет, не попало ли время сброса в интервал времени обработки
+        
+        Args:
+            time_now (str): Время начала обработки в формате "HH:MM"
+            reset_times (list): Список времён сброса
+            
+        Returns:
+            bool: True если был выполнен сброс, False в противном случае
+        """
+        # Получаем текущее время после обработки
+        time_after = dt.datetime.now().strftime("%H:%M")
+        
+        # Проверка пропущенного времени сброса между началом и концом обработки
+        start_time = dt.datetime.strptime(time_now, "%H:%M")
+        end_time = dt.datetime.strptime(time_after, "%H:%M")
+        
+        # Ищем время сброса в интервале обработки
+        for reset_time in reset_times:
+            reset_dt = dt.datetime.strptime(reset_time, "%H:%M")
+            if start_time < reset_dt <= end_time:
+                logger.info(f"Найдено пропущенное время сброса: {reset_time}")
+                marked_off(self.con, self.cur, reset_time)
+                return True
+        
+        return False
 
     def run(self, db_path=None):
         """
@@ -37,29 +65,31 @@ class App:
             # Проверяем, не время ли сбросить отметки
             reset_times = ["08:50", "10:35", "12:20", "14:35", "16:20", "18:05"]
             if time_now in reset_times:
-                logger.info(f"Сброс отметок в {time_now}")
+                # logger.info(f"Сброс отметок в {time_now}")
                 marked_off(self.con, self.cur, time_now)
                 return  # Завершаем выполнение после сброса отметок
             
             # Иначе проверяем каждого пользователя
-            active_users = [u for u in users if u['sub'] and u['is_available'] and not u['marked']]
-            logger.info(f"Проверка {len(active_users)} активных пользователей")
+            sub_users = [u for u in users if u['sub'] and u['is_available'] and not u['marked']]
+            # logger.info(f"Проверка {len(sub_users)} пользователей с подпиской")
             
-            for user in active_users:
+            for user in sub_users:
                 try:
                     status, mes = self.system.run(user["e_mail"], user["password"])
-                    logger.info(f"Пользователь {user['e_mail']}: {mes}")
+                    # logger.info(f"Пользователь {user['e_mail']}: {mes}")
                     
                     if status:
                         marked_on(self.con, self.cur, user['user_id'])
-                        logger.info(f"Пользователь {user['e_mail']} отмечен")
+                        # logger.info(f"Пользователь {user['e_mail']} отмечен")
                 except Exception as e:
                     logger.error(f"Ошибка при обработке пользователя {user['e_mail']}: {e}")
+            
+            # Проверяем, не пропустили ли время сброса во время обработки
+            self.check_missed_reset_time(time_now, reset_times)
             
         except Exception as e:
             logger.error(f"Ошибка при выполнении run: {e}")
         finally:
-            # Не закрываем соединение после каждого запуска, т.к. run вызывается в цикле
             pass
 
     def close(self):

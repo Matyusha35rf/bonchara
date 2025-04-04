@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("av_logs.log"),
+        logging.FileHandler("av_logs.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -26,13 +26,14 @@ class System:
     def check_correct_requests(self, var, mes, section):
         """Проверяет ответ запроса и логирует результат."""
         if var:
-            logger.info(f"{section}: Успешно")
+            # logger.info(f"{section}: Успешно")
+            pass
         elif var is False:
-            logger.warning(f"{section}: {mes}")
+            # logger.warning(f"{section}: {mes}")
+            pass
         elif var is None:
             logger.error(f"{section}: {mes}")
             send_message(876644243, f'{section}: {mes}')
-            # Вместо полного завершения работы, можно выбросить исключение
             raise Exception(f"Критическая ошибка в {section}: {mes}")
 
     def run(self, email, password):
@@ -44,7 +45,7 @@ class System:
                 self.check_correct_requests(sign_in, mes, "Вход")
 
                 visit, mes = visiting(session)
-                logger.info(f"Отметка: {mes}")
+                # logger.info(f"Отметка: {mes}")
                 self.check_correct_requests(visit, mes, "Отметка")
             return visit, mes
         except Exception as e:
