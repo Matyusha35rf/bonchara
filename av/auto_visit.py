@@ -1,22 +1,26 @@
+import asyncio
 import os
 import sqlite3
+import sys
 
 import requests
 from re import search
 # from time import time
 
-
+from bot.send import send_message
 import config
 
 
 class System:
-    def check_correct_requests(self, var, section):
-        if var:
-            print(f"{section}: Все ок")
-        if not var:
-            print(f"{section}: Ответ на запрос не 200")
-        elif var is None:
-            print(f"{section}: Какая-то ошибка")
+    def check_correct_requests(self, var,mes, section):
+        # if var:
+        #     print(f"{section}: Все ок")
+        # if not var:
+        #     print(f"{section}: Ответ на запрос не 200")
+        if var is None:
+            send_message(876644243, f'{section}: {mes}')
+            sys.exit()
+            # print(f"{section}: Какая-то ошибка")
 
     def get_id_zan(self, session):
         rasp = session.get(
@@ -34,6 +38,7 @@ class System:
 
     def auth(self, session, email, password):
         try:
+            # a = 5/0
             session.get(config.base_url, headers=config.headers)
             # Авторизация
             payload = {
@@ -51,8 +56,7 @@ class System:
             else:
                 return False, "Вход невыполнен"
         except Exception as e:
-            print(e)
-            return None, "Ошибка при входе"
+            return None, str(e)
 
     def visiting(self, session):
         try:
@@ -70,7 +74,7 @@ class System:
             if target_response.status_code == 200:
                 print(target_response.status_code, target_response.text)
                 return True, "Отмечен"
-            return False, "Открыт, но не отмечен"
+            return False, target_response.text
         except Exception as e:
             print(e)
             return None, "Ошибка при отметке"
@@ -78,8 +82,8 @@ class System:
     def run(self, email, password):
         with requests.Session() as session:
             sign_in, mes = self.auth(session, email, password)
-            # print(mes)
-            # self.check_correct_requests(sign_in, "Вход")
+            print(mes)
+            self.check_correct_requests(sign_in, mes, "Вход")
 
             visit, mes = self.visiting(session)
             # print(mes)
@@ -95,6 +99,6 @@ if __name__ == "__main__":
     cursor.execute('SELECT e_mail, password FROM users')
     users = cursor.fetchall()
     conn.close()
-    while True:
-        for email, password in users:
-            system.run(email, password)
+    for email, password in users:
+        system.run(email, password)
+
