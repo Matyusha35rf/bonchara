@@ -155,6 +155,61 @@ try:
         conn.commit()
         conn.close()
         return True
+
+
+    def read_db(filename):
+        '''
+        Чтение бд
+        :param filename:
+        :return: conn, cursor
+        '''
+        conn = sqlite3.connect(filename)
+        cursor = conn.cursor()
+        return conn, cursor
+
+
+    def get_users(cursor):
+        '''
+        Получение списка пользователей из бд
+        :param cursor:
+        :return: users
+        '''
+        src = cursor.execute("SELECT * FROM users").fetchall()
+        headers = [i[1] for i in cursor.execute("PRAGMA table_info(users)").fetchall()]
+        users = [dict(zip(headers, row)) for row in src]
+        return users
+
+
+    def marked_off(con, cur, now):
+        '''
+        Перевод информации об отметке в False
+        :param con:
+        :param cur:
+        :param now:
+        :return:
+        '''
+        print(f"Отметки сброшены в {now}")
+        cur.execute(
+            f'''UPDATE users
+                SET marked = 0''')
+        con.commit()
+
+
+    def marked_on(con, cur, user_id):
+        '''
+        Перевод информации об отметке определенного пользователя в True
+        :param con:
+        :param cur:
+        :param user_id:
+        :return:
+        '''
+        cur.execute(
+            f'''UPDATE users
+             SET marked = 1
+             WHERE user_id = {user_id}''')
+        con.commit()
+
+
 except sqlite3.Error as e:
     print(f"Ошибка при выполнении запроса в бд: {e}")
 except Exception as e:

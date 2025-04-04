@@ -39,7 +39,7 @@ def register_handlers(dp: Dispatcher):
     async def process_password(message: types.Message, state: FSMContext):
         data = await state.get_data()
         with requests.Session() as session:
-            if auto_visit.System().auth(session, data['email'], message.text)[0]:
+            if auto_visit.auth(session, data['email'], message.text)[0]:
                 database.save_to_db(data['user_id'], data['username'], data['email'], message.text)
                 await message.answer("✅ Успешная авторизация!", reply_markup=keyboards.main())
             else:
