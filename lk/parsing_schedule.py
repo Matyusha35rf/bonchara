@@ -2,12 +2,23 @@ import time
 from datetime import datetime
 from datetime import timedelta
 from pprint import pprint
-import lk_func
+
 import requests
 
 import config
+import lk_func
 
 from selectolax.parser import HTMLParser
+
+
+
+class Date:
+    def __init__(self, date, day_week):
+        self.date = date
+        self.day_week = day_week
+
+    def __str__(self):
+        return f'{self.date} {self.day_week}'
 
 
 def get_url(group=56206, week=0):
