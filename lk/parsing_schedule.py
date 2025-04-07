@@ -91,7 +91,6 @@ def get_rasp(tree):
     rows = tree.css_first('.vt244b').css('.vt244')
     rasp_days_list_formated = []
     for row in rows:
-
         rasp_day_list = row.css('.rasp-day')
         lesson_num_html = row.css_first('div.vt239')
         lesson_num = LessonNum()
