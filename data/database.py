@@ -29,9 +29,9 @@ try:
                 password TEXT NOT NULL,
                 sub BOOLEAN DEFAULT 0,
                 sub_end_date TEXT,
-                is_available BOOLEAN DEFAULT 0,
-                notifications BOOLEAN DEFAULT 0,
-                button_notifications BOOLEAN DEFAULT 0,
+                is_available BOOLEAN DEFAULT 1,
+                notifications BOOLEAN DEFAULT 1,
+                button_notifications BOOLEAN DEFAULT 1,
                 marked BOOLEAN DEFAULT 0
             )
         ''')
