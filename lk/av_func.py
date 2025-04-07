@@ -8,7 +8,7 @@ def get_id_zan(session):
     :return: id открытого занятия
     """
     rasp = session.get(
-        config.target_url,
+        config.schedule_url,
         headers=config.headers
     ).text
 
@@ -33,7 +33,7 @@ def visiting(session):
             print(id_zan, week_zan)
             params = {"open": 1, "rasp": int(id_zan), "week": int(week_zan)}
         target_response = session.get(
-            config.target_url,
+            config.schedule_url,
             params=params,
             headers=config.headers
         )
