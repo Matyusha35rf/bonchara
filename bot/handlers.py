@@ -15,7 +15,7 @@ from bot.until import check_and_remove_key
 
 from datetime import datetime
 
-from lk import lk_func
+from lk import lk_func, parsing_profile
 
 # Функция для регистрации всех обработчиков
 def register_handlers(dp: Dispatcher):
