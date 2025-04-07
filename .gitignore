@@ -16,4 +16,4 @@ __pycache__/
 
 venv
 
-.bot_token.py
+bot_token.py
