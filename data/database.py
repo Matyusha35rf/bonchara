@@ -151,7 +151,10 @@ try:
     # деактивация подписки
     def sub_deactiv(user_id: int) -> bool:
         conn, cursor = connect()
-        cursor.execute('UPDATE users SET sub = ? WHERE user_id = ?', (False, user_id))
+        cursor.execute('''UPDATE users
+                          SET sub = ?
+                          sub_end_date = ?
+                          WHERE user_id = {user_id}''', (False, '', user_id))
         conn.commit()
         conn.close()
         return True
@@ -166,7 +169,6 @@ try:
         headers = [i[1] for i in cursor.execute("PRAGMA table_info(users)").fetchall()]
         users = [dict(zip(headers, row)) for row in src]
         return users
-
 
     def marked_off(con, cur, now):
         '''
