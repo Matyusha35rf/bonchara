@@ -1,4 +1,6 @@
 import config
+import requests
+
 
 def auth(session, email, password):
     """
@@ -28,4 +30,16 @@ def auth(session, email, password):
             return False, "Вход не выполнен"
     except Exception as e:
         return None, str(e)
+
+
+def connect(url):
+    # s = time.time()
+    with requests.session() as session:
+        response = session.get(url, headers=config.headers)
+        if response.status_code == 200:
+            # f = time.time()
+            # print(f - s)
+            return response.text
+        else:
+            print(response.status_code)
 

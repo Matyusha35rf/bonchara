@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from datetime import timedelta
 from pprint import pprint
-
+import lk_func
 import requests
 
 import config
@@ -17,19 +17,6 @@ def get_url(group=56206, week=0):
     date = date.strftime('%Y-%m-%d')
     url = f"https://www.sut.ru/studentu/raspisanie/raspisanie-zanyatiy-studentov-ochnoy-i-vecherney-form-obucheniya?group={group}&date={date}"
     return url
-
-
-def connect():
-    # s = time.time()
-    url = get_url()
-    with requests.session() as session:
-        response = session.get(url, headers=config.headers)
-        if response.status_code == 200:
-            # f = time.time()
-            # print(f - s)
-            return response.text
-        else:
-            print(response.status_code)
 
 
 def get_days(tree):
@@ -63,7 +50,7 @@ def get_rasp(tree):
 
 
 def parse_schedule():
-    html = connect()
+    html = lk_func.connect(get_url())
     tree = HTMLParser(html)
     table = tree.css_first('div.vt236')
     days_list = get_days(table)
