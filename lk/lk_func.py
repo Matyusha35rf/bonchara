@@ -11,7 +11,6 @@ def auth(session, email, password):
     :return: True - вход был успешно выполнен, False - вход не был выполнен, None - произошла ошибка
     """
     try:
-        # a = 5/0
         session.get(config.base_url, headers=config.headers)
         # Авторизация
         payload = {
