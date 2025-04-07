@@ -20,6 +20,9 @@ class Date:
     def __str__(self):
         return f'{self.date} {self.day_week}'
 
+    def __repr__(self):
+        return f'{self.date} {self.day_week}'
+
 
 def get_url(group=56206, week=0):
     date = datetime.today()
@@ -34,7 +37,8 @@ def get_days(tree):
     days_html = tree.css_first('.vt244a').css('.vt237')
     days_list = []
     for i in range(1, len(days_html)):
-        days_list.append(days_html[i].text().strip().split())
+        day = days_html[i].text().strip().split()
+        days_list.append(Date(day[0], day[1]))
     return days_list
 
 
@@ -73,13 +77,18 @@ def parse_schedule():
 def format_dict():
     schedule_dict, days_list = parse_schedule()
     formated_schedule = {}
-    for lesson in schedule_dict:
-        print(lesson)
-        for day in range(len(days_list)):
-            if day not in formated_schedule:
-                formated_schedule[day] = [lesson]
-            else:
-                formated_schedule[day].append([lesson])
+    print(days_list)
+    for lesson_row in schedule_dict:
+        for lesson in lesson_row:
+            for day in range(len(days_list)):
+                if days_list[day] not in formated_schedule:
+                    formated_schedule[days_list[day]] = [lesson_row[lesson][day]]
+                else:
+                    formated_schedule[days_list[day]].append(lesson_row[lesson][day])
+                # if day not in formated_schedule:
+                #     formated_schedule[day] = [lesson]
+                # else:
+                #     formated_schedule[day].append([lesson])
     pprint(formated_schedule)
 
 if __name__ == '__main__':
