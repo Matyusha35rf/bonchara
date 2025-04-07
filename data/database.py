@@ -32,19 +32,21 @@ try:
                 is_available BOOLEAN DEFAULT 1,
                 notifications BOOLEAN DEFAULT 1,
                 button_notifications BOOLEAN DEFAULT 1,
-                marked BOOLEAN DEFAULT 0
+                marked BOOLEAN DEFAULT 0,
+                user_group TEXT,
+                semester INT
             )
         ''')
         conn.commit()
         conn.close()
 
 
-    def save_to_db(user_id: int, username: str, email: str, password: str):
+    def save_to_db(user_id: int, username: str, email: str, password: str, user_group: str, semester: int):
         conn, cursor = connect()
         cursor.execute('''
-            INSERT OR REPLACE INTO users (user_id, username, e_mail, password)
-            VALUES (?, ?, ?, ?)
-        ''', (user_id, username, email, password))
+            INSERT OR REPLACE INTO users (user_id, username, e_mail, password, user_group, semester)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (user_id, username, email, password, user_group, semester))
         conn.commit()
         conn.close()
 

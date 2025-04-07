@@ -6,12 +6,12 @@ from selectolax.parser import HTMLParser
 from datetime import datetime
 
 import config
-from lk_func import auth, connect_session
+from lk import lk_func
 
 
 def parsing_profile(session):
     url = 'https://lk.sut.ru/cabinet/project/cabinet/forms/profil.php'
-    profile = connect_session(url, session)
+    profile = lk_func.connect_session(url, session)
     profile = HTMLParser(profile)
     trs = profile.css("tr")
     prof = ""
@@ -29,15 +29,13 @@ def parsing_profile(session):
                 month = datetime.now().month
                 sem = 2 if 1 < month < 9 else 1
                 prof_dict["Семестр"] = str((int(line[1])-1)*2 + sem)
-
-    print(prof_dict)
-    return profile.text().strip()
+    return prof_dict
 
 
 if __name__ == "__main__":
     start = time()
     session = requests.Session()
-    auth(session, 'mosenkov16@mail.ru', 'i5jRHseAQjaS')
+    lk_func.auth(session, 'mosenkov16@mail.ru', 'i5jRHseAQjaS')
     parsing_profile(session)
 
 
