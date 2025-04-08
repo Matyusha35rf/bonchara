@@ -1,11 +1,7 @@
-import os
-import sqlite3
-import requests
-from time import time
 from selectolax.parser import HTMLParser
 from datetime import datetime
+import requests
 
-import config
 from lk import lk_func
 
 
@@ -33,7 +29,6 @@ def parsing_profile(session):
 
 
 if __name__ == "__main__":
-    start = time()
     session = requests.Session()
     lk_func.auth(session, 'mosenkov16@mail.ru', 'i5jRHseAQjaS')
     parsing_profile(session)

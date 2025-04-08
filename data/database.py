@@ -4,12 +4,24 @@ from datetime import datetime, timedelta
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.normpath(os.path.join(script_dir, '..', 'data', 'users.db'))
+db_path_subjects = os.path.normpath(os.path.join(script_dir, '..', 'data', 'subjects.db'))
 
 
-# подключение к базе данных
+# подключение к основной базе данных
 def connect():
     try:
         conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        return conn, cursor
+    except sqlite3.Error as ex:
+        print(f"Ошибка подключения к базе данных: {ex}")
+        return None, None
+
+
+# подключение к базе данных
+def connect_subjects():
+    try:
+        conn = sqlite3.connect(db_path_subjects)
         cursor = conn.cursor()
         return conn, cursor
     except sqlite3.Error as ex:
