@@ -16,6 +16,8 @@ from bot.until import check_and_remove_key
 from datetime import datetime
 
 from lk import lk_func, parsing_profile
+from lk.update_subjects import update_subjects
+from lk.parsing_profile import parsing_profile
 
 
 # Функция для регистрации всех обработчиков
@@ -44,8 +46,9 @@ def register_handlers(dp: Dispatcher):
         data = await state.get_data()
         with requests.Session() as session:
             if lk_func.auth(session, data['email'], message.text)[0]:
-                prof = parsing_profile.parsing_profile(session)
-                database.save_to_db(data['user_id'], data['username'], data['email'], message.text, prof['Группа'], prof['Семестр'])
+                prof = parsing_profile(session)
+                update_subjects(session, prof['Семестр'], data['user_id'])
+                database.add_to_db_reg(data['user_id'], data['username'], data['email'], message.text, prof['Группа'], prof['Семестр'])
                 await message.answer("✅ Успешная авторизация!", reply_markup=keyboards.main())
             else:
                 await message.answer("❌ Неверные данные. Попробуйте снова.", reply_markup=keyboards.connect())

@@ -18,17 +18,6 @@ def connect():
         return None, None
 
 
-# подключение к базе данных
-def connect_subjects():
-    try:
-        conn = sqlite3.connect(db_path_subjects)
-        cursor = conn.cursor()
-        return conn, cursor
-    except sqlite3.Error as ex:
-        print(f"Ошибка подключения к базе данных: {ex}")
-        return None, None
-
-
 try:
     def init_db():
         conn, cursor = connect()
@@ -53,7 +42,21 @@ try:
         conn.close()
 
 
-    def save_to_db(user_id: int, username: str, email: str, password: str, user_group: str, semester: int):
+    def init_db_subjects():
+        conn, cursor = connect()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS subjects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                UNIQUE(subject, user_id)
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+
+    def add_to_db_reg(user_id: int, username: str, email: str, password: str, user_group: str, semester: int):
         conn, cursor = connect()
         cursor.execute('''
             INSERT OR REPLACE INTO users (user_id, username, e_mail, password, user_group, semester)
@@ -62,6 +65,16 @@ try:
         conn.commit()
         conn.close()
 
+
+    def add_to_db_subjects(user_id, subjects):
+        conn, cur = connect()
+        for subject in subjects:
+            cur.execute('''
+                INSERT OR REPLACE INTO subjects (subject, user_id)
+                VALUES (?, ?)
+            ''', (subject, user_id))
+        conn.commit()
+        conn.close()
 
     def sw_av(user_id: int) -> bool:
         conn, cursor = connect()
