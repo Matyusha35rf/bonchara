@@ -57,3 +57,5 @@ def get_matched_groups():
 
 if __name__ == '__main__':
     lst = get_matched_groups()
+    group = find_id_by_name('ИСТ-341')
+    print(group)

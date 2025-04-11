@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import config
 import requests
 
@@ -47,4 +49,13 @@ def connect_session(url, session):
             return response.text
         else:
             print(response.status_code)
+
+
+def get_number_lesson(time):
+    for i in range(len(config.start_lessons)):
+        if datetime.strptime(config.start_lessons[i], '%H:%M').time() <= datetime.strptime(time, '%H:%M').time() <= datetime.strptime(
+            config.end_lessons[i], '%H:%M').time():
+            return i
+    return None
+
 

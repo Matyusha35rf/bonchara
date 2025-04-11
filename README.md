@@ -1,4 +1,5 @@
 # Бончара
+
 # \>>Работа с функциями
 
 ## Расписание
@@ -9,7 +10,14 @@
 
 * **Получение расписания по названию группы (Напр. "ИСТ-341") и недели (относительное изменение недели от текущего)**
 
-``get_schedule_by_name(name_group, week)``
+```
+from schedule import get_schedule_by_name
+get_schedule_by_name(name_group, week)
+```
+* **Получение расписание конкретного дня недели по:**
+  * **ID**
+  * **Названия группы**
+
 
 ## Соответствия групп и ID
 * **Получение id группы по названию группы (Напр. "ИСТ-341")**
@@ -21,9 +29,26 @@
 
 ## Сообщения студента
 
-* **Получение содержимого JSON сообщения по id сообщения**
+* **Получение содержимого сообщения в JSON по id сообщения**
 
-``get_message_by_id(id_mes, email, password)``
+```
+form lk.message import get_message_by_id
+get_message_by_id(id_mes, email, password)
+```
 * **Получение id последнего сообщения**
 
-``get_id_last_message(email, password)``
+```
+form lk.message import get_id_last_message
+get_id_last_message(email, password)
+```
+
+# Общие функции для программирования
+
+* **Вход в аккаунт**
+
+```
+import lk.lk_func
+auth(session, email,pass)
+```
+
+* **Получение номер пары**
