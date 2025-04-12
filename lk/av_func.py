@@ -1,6 +1,7 @@
 import config
 from re import search
 
+
 def get_id_zan(session):
     """
     Получение id открытого занятия
@@ -18,6 +19,7 @@ def get_id_zan(session):
     match_week = search(rf'open_zan\({id_zan},(\d+)', rasp)
     week_zan = int(match_week.group(1)) if match_week else None
     return id_zan, week_zan
+
 
 def visiting(session):
     """

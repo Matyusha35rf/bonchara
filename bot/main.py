@@ -14,9 +14,8 @@ async def main():
     register_handlers(dp)
 
     # Инициализация базы данных
-    from data.database import init_db, init_db_subjects
+    from data.database import init_db
     init_db()
-    init_db_subjects()
     await dp.start_polling(bot)
 
 

@@ -58,17 +58,13 @@ def register_handlers(dp: Dispatcher):
     # 📄 Отображение профиля
     @dp.message(lambda m: m.text == "👤 Профиль" or m.text == "🔙 Назад в профиль")
     async def profile_message(message: types.Message):
-        conn, cursor = database.connect()
-        cursor = conn.cursor()
-        cursor.execute('SELECT username, sub, sub_end_date FROM users WHERE user_id = ?', (message.from_user.id,))
-        user = cursor.fetchone()
-        conn.close()
+        user = database.get_user(message.from_user.id)
 
         if user:
-            username, subscription, sub_end_date = user
-            sub_status = "Активна" if subscription else "Не активна"
+            username, sub, sub_end_date = user["username"], user["sub"], user["sub_end_date"]
+            sub_status = "Активна" if sub else "Не активна"
 
-            if subscription and sub_end_date:
+            if sub and sub_end_date:
                 end_date = datetime.strptime(sub_end_date, '%Y-%m-%d')
                 remaining_days = (end_date - datetime.now()).days
                 sub_info = f"📝 Подписка: {sub_status} ({remaining_days} дней)"
