@@ -57,6 +57,14 @@ def init_db():
                 UNIQUE(subject, user_id)
             )
         ''')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_name TEXT UNIQUE NOT NULL,
+        group_id INTEGER NOT NULL)
+        ''')
+
+
         conn.commit()
     finally:
         conn.close()

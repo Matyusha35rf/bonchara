@@ -21,7 +21,7 @@ def tr_click(id, session):
     if response.status_code == 200:
         print("Запрос успешен!")
         try:
-            json_data = response.json()
+            return response.json()
             print("Ответ сервера:", json_data)
         except ValueError:
             print("Ответ сервера (не JSON):", response.text)
@@ -32,7 +32,7 @@ def tr_click(id, session):
 def get_message_by_id(id_mes, email, password):
     with requests.Session() as session:
         status, mes = auth(session, email, password)
-        tr_click(id_mes, session)
+        return tr_click(id_mes, session)
 
 
 def get_id_last_message(email, password):
