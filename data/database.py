@@ -35,11 +35,11 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER UNIQUE NOT NULL,
                 username TEXT,
-                e_mail TEXT NOT NULL,
+                email TEXT NOT NULL,
                 password TEXT NOT NULL,
                 sub BOOLEAN DEFAULT 0,
                 sub_end_date TEXT,
-                is_available BOOLEAN DEFAULT 1,
+                av_status BOOLEAN DEFAULT 1,
                 notifications BOOLEAN DEFAULT 1,
                 button_notifications BOOLEAN DEFAULT 1,
                 marked BOOLEAN DEFAULT 0,
@@ -53,7 +53,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 subject TEXT NOT NULL,
                 user_id INTEGER NOT NULL,
-                switch BOOLEAN DEFAULT 1,
+                status BOOLEAN DEFAULT 1,
                 UNIQUE(subject, user_id)
             )
         ''')
@@ -84,7 +84,7 @@ def add_to_db_reg(user_id: int, username: str, email: str, password: str,
     conn, cursor = connect()
     try:
         cursor.execute('''
-            INSERT OR REPLACE INTO users (user_id, username, e_mail, password, user_group, semester)
+            INSERT OR REPLACE INTO users (user_id, username, email, password, user_group, semester)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (user_id, username, email, password, user_group, semester))
         conn.commit()
@@ -100,10 +100,10 @@ def sw_av(user_id: int) -> bool:
     """
     conn, cursor = connect()
     try:
-        cursor.execute('SELECT is_available FROM users WHERE user_id = ?', (user_id,))
+        cursor.execute('SELECT av_status FROM users WHERE user_id = ?', (user_id,))
         current_state = cursor.fetchone()[0]
         new_state = not current_state
-        cursor.execute('UPDATE users SET is_available = ? WHERE user_id = ?', (new_state, user_id))
+        cursor.execute('UPDATE users SET av_status = ? WHERE user_id = ?', (new_state, user_id))
         conn.commit()
         return new_state
     finally:
@@ -305,9 +305,9 @@ def add_to_db_subjects(user_id: int, subjects: list):
     try:
         for subject in subjects:
             cur.execute('''
-                INSERT OR REPLACE INTO subjects (subject, user_id)
-                VALUES (?, ?)
-            ''', (subject, user_id))
+                INSERT OR REPLACE INTO subjects (subject, user_id, status)
+                VALUES (?, ?, ?)
+            ''', (subject, user_id, 1))
         conn.commit()
     finally:
         conn.close()
@@ -322,7 +322,7 @@ def get_subjects_status(user_id):
     """
     con, cur = connect()
     cur.execute('''
-        SELECT subject, switch FROM subjects 
+        SELECT subject, status FROM subjects 
         WHERE user_id = ?
     ''', (user_id,))
     rows = cur.fetchall()
@@ -357,10 +357,10 @@ def sw_subject_status(user_id: int, subject: str) -> bool:
     """
     conn, cursor = connect()
     try:
-        cursor.execute('SELECT switch FROM subjects WHERE user_id = ? AND subject = ?', (user_id, subject))
+        cursor.execute('SELECT status FROM subjects WHERE user_id = ? AND subject = ?', (user_id, subject))
         current_state = cursor.fetchone()[0]
         new_state = not current_state
-        cursor.execute('UPDATE subjects SET switch = ? WHERE user_id = ? AND subject = ?', (new_state, user_id, subject))
+        cursor.execute('UPDATE subjects SET status = ? WHERE user_id = ? AND subject = ?', (new_state, user_id, subject))
         conn.commit()
         return new_state
     finally:

@@ -19,6 +19,8 @@ from lk import lk_func, parsing_profile
 from lk.update_subjects import update_subjects
 from lk.parsing_profile import parsing_profile
 
+from hashlib import md5
+
 
 # Функция для регистрации всех обработчиков
 def register_handlers(dp: Dispatcher):
@@ -109,17 +111,14 @@ def register_handlers(dp: Dispatcher):
     async def back_to_main(message: types.Message):
         await message.answer("🏠 Главное меню:", reply_markup=keyboards.main())
 
-    @dp.callback_query(lambda c: c.data in ["toggle_autovisit", "toggle_notifications", "toggle_button_notifications"])
+    @dp.callback_query(lambda c: c.data in ["toggle_notifications", "toggle_button_notifications"])
     async def toggle_callback(callback: types.CallbackQuery):
         user_id = callback.from_user.id
         if not database.is_sub_activ(user_id):
             await callback.answer("❌ У вас нет активной подписки.", show_alert=True)
             return
 
-        if callback.data == "toggle_autovisit":
-            state = database.sw_av(user_id)
-            status = "🟢 Автопосещение включено!" if state else "🔴 Автопосещение выключено!"
-        elif callback.data == "toggle_notifications":
+        if callback.data == "toggle_notifications":
             state = database.sw_notif(user_id)
             status = "🟢 Уведомления включены!" if state else "🔴 Уведомления выключены!"
         else:
@@ -129,7 +128,189 @@ def register_handlers(dp: Dispatcher):
         await callback.message.edit_text(status, reply_markup=keyboards.sett())
         await callback.answer()
 
-    # 🗑️ Удаление аккаунта
+    @dp.callback_query(lambda c: c.data.startswith("av_"))
+    async def handle_av_actions(callback: types.CallbackQuery):
+        user_id = callback.from_user.id
+        action = callback.data  # "av_settings", "av_sw" и т.д.
+
+        # Проверка подписки
+        if not database.is_sub_activ(user_id):
+            await callback.answer("❌ Требуется активная подписка", show_alert=True)
+            return
+
+        # Обработка переключения статуса
+        if action == "av_sw":
+            new_status = database.sw_av(user_id)
+            status_text = "🟢 Включено" if new_status else "🔴 Выключено"
+            await callback.answer(f"Статус изменён: {status_text}")
+
+        # Обновляем сообщение для ЛЮБОГО действия
+        current_status = database.get_user(user_id)['av_status']
+        status_display = "🟢 Включено" if current_status else "🔴 Выключено"
+
+        await callback.message.edit_text(
+            f"🤖 Настройки автопосещения\nТекущий статус: {status_display}",
+            reply_markup=keyboards.av_settings()
+        )
+
+    # Настройки предметов
+    @dp.callback_query(lambda c: c.data == "subject_settings")
+    async def subject_settings_callback(callback: types.CallbackQuery):
+        user_id = callback.from_user.id
+        if not database.is_sub_activ(user_id):
+            await callback.answer("❌ У вас нет активной подписки.", show_alert=True)
+            return
+
+        subjects = database.get_subjects_status(user_id)
+        await callback.message.edit_text(
+            "📚 Настройки предметов\nВыберите предметы для автопосещения:",
+            reply_markup=keyboards.subject_settings_keyboard(subjects)
+        )
+        await callback.answer()
+
+    # Обновление списка предметов
+    @dp.callback_query(lambda c: c.data == "refresh_subjects")
+    async def refresh_subjects_callback(callback: types.CallbackQuery):
+        user_id = callback.from_user.id
+        user = database.get_user(user_id)
+        with requests.Session() as session:
+            if lk_func.auth(session, user['email'], user['password'])[0]:
+                prof = parsing_profile(session)
+                update_subjects(session, prof['Семестр'], user_id)
+                subjects = database.get_subjects_status(user_id)
+                await callback.message.edit_text(
+                    "🔄 Список предметов обновлен:",
+                    reply_markup=keyboards.subject_settings_keyboard(subjects)
+                )
+        await callback.answer()
+
+    # Обработчик для переключения статуса предмета
+    @dp.callback_query(lambda c: c.data.startswith("subj_"))
+    async def subject_toggle_callback(callback: types.CallbackQuery, state: FSMContext):
+        user_id = callback.from_user.id
+        subject_hash = callback.data.replace("subj_", "")
+        data = await state.get_data()
+
+        # Получаем предмет по хешу
+        subjects = database.get_subjects_status(user_id)
+        selected_subject = next(
+            (subj for subj in subjects
+             if md5(subj.encode()).hexdigest()[:8] == subject_hash),
+            None
+        )
+
+        if not selected_subject:
+            await callback.answer("❌ Предмет не найден")
+            return
+
+        # Режим удаления
+        if data.get('is_deletion_mode', False):
+            selected_subjects = data.get('selected_subjects', [])
+
+            if selected_subject in selected_subjects:
+                selected_subjects.remove(selected_subject)
+            else:
+                selected_subjects.append(selected_subject)
+
+            await state.update_data(selected_subjects=selected_subjects)
+            await callback.message.edit_reply_markup(
+                reply_markup=keyboards.subject_settings_keyboard(
+                    subjects,
+                    selected_subjects,
+                    True
+                )
+            )
+        # Обычный режим (переключение статуса)
+        else:
+            new_status = database.sw_subject_status(user_id, selected_subject)
+            await callback.message.edit_reply_markup(
+                reply_markup=keyboards.subject_settings_keyboard(
+                    database.get_subjects_status(user_id)
+                )
+            )
+            await callback.answer(
+                f"Статус изменён: {'🟢 Вкл' if new_status else '🔴 Выкл'}"
+            )
+
+    # Режим удаления предметов
+    @dp.callback_query(lambda c: c.data == "delete_nonexistent")
+    async def delete_nonexistent_callback(callback: types.CallbackQuery, state: FSMContext):
+        user_id = callback.from_user.id
+        subjects = database.get_subjects_status(user_id)
+        await state.update_data(selected_subjects=[], is_deletion_mode=True)
+        await callback.message.edit_text(
+            "🗑️ Выберите предметы для удаления:",
+            reply_markup=keyboards.subject_settings_keyboard(subjects, [], True)
+        )
+        await callback.answer()
+
+    # Обработчик для режима удаления предметов
+    @dp.callback_query(lambda c: c.data.startswith("subject_"))
+    async def subject_deletion_callback(callback: types.CallbackQuery, state: FSMContext):
+        subject = callback.data.replace("subject_", "")
+        data = await state.get_data()
+
+        if not data.get('is_deletion_mode', False):
+            await callback.answer("❌ Неверный режим")
+            return
+
+        selected_subjects = data.get('selected_subjects', [])
+        if subject in selected_subjects:
+            selected_subjects.remove(subject)
+        else:
+            selected_subjects.append(subject)
+
+        await state.update_data(selected_subjects=selected_subjects)
+
+        # Обновляем клавиатуру
+        user_id = callback.from_user.id
+        subjects = database.get_subjects_status(user_id)
+        await callback.message.edit_reply_markup(
+            reply_markup=keyboards.subject_settings_keyboard(subjects, selected_subjects, True)
+        )
+        await callback.answer()
+
+    # Подтверждение удаления
+    @dp.callback_query(lambda c: c.data == "confirm_deletion")
+    async def confirm_deletion_callback(callback: types.CallbackQuery, state: FSMContext):
+        data = await state.get_data()
+        selected_subjects = data.get('selected_subjects', [])
+        subjects = database.get_subjects_status(user_id=callback.from_user.id)
+        if selected_subjects:
+            database.del_subjects(callback.from_user.id, selected_subjects)
+            subjects = database.get_subjects_status(user_id=callback.from_user.id)
+            await callback.message.edit_text(
+                f"✅ Удалено {len(selected_subjects)} предметов",
+                reply_markup=keyboards.subject_settings_keyboard(subjects)
+            )
+        else:
+            await callback.message.edit_text(
+                "❌ Не выбрано ни одного предмета для удаления",
+                reply_markup=keyboards.subject_settings_keyboard(subjects)
+            )
+
+        await state.clear()
+        await callback.answer()
+
+    # Кнопки назад
+    @dp.callback_query(lambda c: c.data == "back_to_autovisit")
+    async def back_to_autovisit_callback(callback: types.CallbackQuery, state: FSMContext):
+        user_id = callback.from_user.id
+        await state.clear()
+        current_status = database.get_user(user_id)["av_status"]
+        status_text = "🟢 Включено" if current_status else "🔴 Выключено"
+
+        # Формируем сообщение с текущим статусом
+        message_text = f"🤖 Настройки автопосещения\nТекущий статус: {status_text}"
+        await callback.message.edit_text(message_text, reply_markup=keyboards.av_settings())
+
+    @dp.callback_query(lambda c: c.data == "back_to_settings")
+    async def back_to_settings_callback(callback: types.CallbackQuery, state: FSMContext):
+        await state.clear()
+        await callback.message.edit_text("⚙️ Настройки:", reply_markup=keyboards.sett())
+        await callback.answer()
+
+    # Удаление аккаунта
     @dp.callback_query(lambda c: c.data == "delete_account")
     async def delete_account_callback(callback: types.CallbackQuery):
         database.del_acc(callback.from_user.id)

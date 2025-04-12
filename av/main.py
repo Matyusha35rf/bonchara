@@ -39,11 +39,11 @@ class App:
         """
         # Получаем текущее время после обработки
         time_after = dt.datetime.now().strftime("%H:%M")
-        
+
         # Проверка пропущенного времени сброса между началом и концом обработки
         start_time = dt.datetime.strptime(time_now, "%H:%M")
         end_time = dt.datetime.strptime(time_after, "%H:%M")
-        
+
         # Ищем время сброса в интервале обработки
         for reset_time in reset_times:
             reset_dt = dt.datetime.strptime(reset_time, "%H:%M")
@@ -51,7 +51,7 @@ class App:
                 logger.info(f"Найдено пропущенное время сброса: {reset_time}")
                 marked_off(self.con, self.cur, reset_time)
                 return True
-        
+
         return False
 
     def run(self, db_path=None):
@@ -62,32 +62,32 @@ class App:
             # Получаем список пользователей
             users = get_users(self.cur)
             time_now = dt.datetime.now().strftime("%H:%M")
-            
+
             # Проверяем, не время ли сбросить отметки
             reset_times = config.end_lessons
             if time_now in reset_times:
                 # logger.info(f"Сброс отметок в {time_now}")
                 marked_off(self.con, self.cur, time_now)
                 return  # Завершаем выполнение после сброса отметок
-            
+
             # Иначе проверяем каждого пользователя
             sub_users = [u for u in users if u['sub'] and u['is_available'] and not u['marked']]
             # logger.info(f"Проверка {len(sub_users)} пользователей с подпиской")
-            
+
             for user in sub_users:
                 try:
                     status, mes = self.system.run(user["e_mail"], user["password"])
                     # logger.info(f"Пользователь {user['e_mail']}: {mes}")
-                    
+
                     if status:
                         marked_on(self.con, self.cur, user['user_id'])
                         # logger.info(f"Пользователь {user['e_mail']} отмечен")
                 except Exception as e:
                     logger.error(f"Ошибка при обработке пользователя {user['e_mail']}: {e}")
-            
+
             # Проверяем, не пропустили ли время сброса во время обработки
             self.check_missed_reset_time(time_now, reset_times)
-            
+
         except Exception as e:
             logger.error(f"Ошибка при выполнении run: {e}")
         finally:
@@ -104,13 +104,13 @@ if __name__ == "__main__":
     app = App()
     db_path = 'data/users.db'
     start_time = time.time()
-    
+
     try:
         # Инициализация и запуск основного цикла
         app.con, app.cur = connect()
         marked_off(app.con, app.cur, 'Стартовая')
         logger.info(f"Автопосещение начало работу в {dt.datetime.now()}")
-        
+
         # Используем обработку исключений для корректного завершения при прерывании
         try:
             while True:
@@ -124,7 +124,7 @@ if __name__ == "__main__":
             send_message(876644243, f'Критическая ошибка в main.py: {e}')
         finally:
             app.close()
-            
+
     except Exception as e:
         logger.critical(f"Ошибка при запуске: {e}")
     finally:
