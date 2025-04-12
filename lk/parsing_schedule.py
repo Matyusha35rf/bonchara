@@ -22,17 +22,18 @@ class Date:
 
 
 class Lesson:
-    def __init__(self, title, teacher, auditorium, lesson_type):
+    def __init__(self, lesson_num, title, teacher, auditorium, lesson_type):
+        self.lesson_num = lesson_num
         self.title = title
         self.teacher = teacher
         self.auditorium = auditorium
         self.lesson_type = lesson_type
 
     def __str__(self):
-        return f'{self.title} {self.teacher} {self.auditorium} {self.lesson_type}'
+        return f'{self.lesson_num} {self.title} {self.teacher} {self.auditorium} {self.lesson_type}'
 
     def __repr__(self):
-        return f'{self.title} {self.teacher} {self.auditorium} {self.lesson_type}'
+        return f'{self.lesson_num} {self.title} {self.teacher} {self.auditorium} {self.lesson_type}'
 
 
 class LessonNum:
@@ -57,10 +58,10 @@ class LessonNum:
             self.end_time = None
 
     def __str__(self):
-        return f'{self.lesson_num} {self.start_time}:{self.end_time}'
+        return f'{self.lesson_num} {self.start_time}-{self.end_time}'
 
     def __repr__(self):
-        return f'{self.lesson_num} {self.start_time}:{self.end_time}'
+        return f'{self.lesson_num} {self.start_time}-{self.end_time}'
 
 
 def get_url(group, week):
@@ -101,15 +102,17 @@ def get_rasp(tree):
             teacher = check_existing_css(j.css_first('.vt241'))
             auditorium = check_existing_css(j.css_first('.vt242'))
             type_lesson = check_existing_css(j.css_first('.vt243'))
-            dict_day[lesson_num].append(Lesson(title, teacher, auditorium, type_lesson))
+            dict_day[lesson_num].append(Lesson(lesson_num,title, teacher, auditorium, type_lesson))
         rasp_days_list_formated.append(dict_day)
     return rasp_days_list_formated
 
 
-def parse_schedule(group, week):
+def parse_schedule(group, week) -> (dict, list):
     html = lk_func.connect(get_url(group, week))
     tree = HTMLParser(html)
     table = tree.css_first('div.vt236')
+    if not table:
+        return None, None
     days_list = get_days(table)
     schedule_dict = get_rasp(table)
 
@@ -118,5 +121,6 @@ def parse_schedule(group, week):
 
 if __name__ == '__main__':
     start_time = time.time()
+
     finish_time = time.time()
     # print(finish_time - start_time)

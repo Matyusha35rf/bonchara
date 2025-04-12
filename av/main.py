@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from av.auto_visit import System
 from bot.send import send_message
 from data.database import connect, get_users, marked_on, marked_off
+import config
 
 # Настройка логирования
 logging.basicConfig(
@@ -63,7 +64,7 @@ class App:
             time_now = dt.datetime.now().strftime("%H:%M")
             
             # Проверяем, не время ли сбросить отметки
-            reset_times = ["08:50", "10:35", "12:20", "14:35", "16:20", "18:05"]
+            reset_times = config.end_lessons
             if time_now in reset_times:
                 # logger.info(f"Сброс отметок в {time_now}")
                 marked_off(self.con, self.cur, time_now)
