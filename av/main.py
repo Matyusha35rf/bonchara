@@ -71,12 +71,12 @@ class App:
                 return  # Завершаем выполнение после сброса отметок
 
             # Иначе проверяем каждого пользователя
-            sub_users = [u for u in users if u['sub'] and u['is_available'] and not u['marked']]
+            sub_users = [u for u in users if u['sub'] and u['av_status'] and not u['marked']]
             # logger.info(f"Проверка {len(sub_users)} пользователей с подпиской")
 
             for user in sub_users:
                 try:
-                    status, mes = self.system.run(user["e_mail"], user["password"])
+                    status, mes = self.system.run(user["email"], user["password"])
                     # logger.info(f"Пользователь {user['e_mail']}: {mes}")
 
                     if status:

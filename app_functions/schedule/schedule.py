@@ -38,18 +38,26 @@ def get_schedule_current_day_by_id(id_group, week, day_week):
             return schedule[day]
 
 
-def get_schedule_current_day_by_name(name_group, week, day_week):
+def get_schedule_current_day_by_name(name_group, day_week):
     id_group = find_id_by_name(name_group)
-    schedule = get_schedule_by_id(id_group, week)
+    print(id_group)
+    schedule = get_schedule_by_id(id_group, 0)
     if id_group is None:
         return None
     for day in schedule:
         if day.day_week.lower() == day_week.lower():
             return schedule[day]
 
+def write_db_schedule_current_day():
+    from data.database import connect
 
+    con,cur = connect()
+    id_groups_set = set([data[0] for data in cur.execute("SELECT user_group FROM users").fetchall()])
+    for group in id_groups_set:
+
+        schedule = get_schedule_by_name(group,)
 
 if __name__ == '__main__':
-    schedule = get_schedule_by_name('ИСТ-341', 8)
-    day_schedule = get_schedule_current_day_by_name('ИСТ-341', week=0, day_week='среда')
-    print(day_schedule)
+    # schedule = get_schedule_by_name('ИСТ-341', 8)
+    # day_schedule = get_schedule_current_day_by_name('ИСТ-341', day_week='среда')
+    write_db_schedule_current_day()

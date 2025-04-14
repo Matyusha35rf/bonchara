@@ -63,8 +63,16 @@ def init_db():
         group_name TEXT UNIQUE NOT NULL,
         group_id INTEGER NOT NULL)
         ''')
-
-
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS schedule_current_day (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_name TEXT NOT NULL,
+        lesson_num INTEGER NOT NULL,
+        lesson_title TEXT NOT NULL,
+        teacher TEXT,
+        auditorium TEXT,
+        lesson_type TEXT
+        )''')
         conn.commit()
     finally:
         conn.close()

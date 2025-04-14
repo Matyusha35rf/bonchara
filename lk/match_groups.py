@@ -39,7 +39,7 @@ def find_id_by_name(name_group):
     con,cur = connect()
     group_id = cur.execute('''SELECT group_id FROM groups WHERE group_name=?''', (name_group,)).fetchone()
     if group_id:
-        return group_id
+        return group_id[0]
     return None
 
 
@@ -60,5 +60,5 @@ def write_db():
 if __name__ == '__main__':
     lst = get_matched_groups()
     group = find_id_by_name('ИСТ-341')
-    # write_db()
+    write_db()
     print(group)

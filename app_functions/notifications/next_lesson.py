@@ -4,4 +4,3 @@ import config
 from config import start_lessons, end_lessons
 
 
-
