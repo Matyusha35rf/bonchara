@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timedelta
 from pprint import pprint
 
+import config
 from lk import lk_func
 
 from selectolax.parser import HTMLParser
@@ -64,13 +65,23 @@ class LessonNum:
         return f'{self.lesson_num} {self.start_time}-{self.end_time}'
 
 
-def get_url(group, week):
-    date = datetime.today()
+def delta_date(date, week):
+    print(week)
     delta_week = timedelta(weeks=week)
-    print(delta_week)
     date += delta_week
     date = date.strftime('%Y-%m-%d')
+    return date
+
+
+def get_url(group, week):
+    date = delta_date(datetime.today(), week)
     url = f"https://www.sut.ru/studentu/raspisanie/raspisanie-zanyatiy-studentov-ochnoy-i-vecherney-form-obucheniya?group={group}&date={date}"
+    return url
+
+def get_url_abs(id_group, week):
+    target_date = delta_date(config.start_first_sem, week-1)
+    print(target_date)
+    url = f"https://www.sut.ru/studentu/raspisanie/raspisanie-zanyatiy-studentov-ochnoy-i-vecherney-form-obucheniya?group={id_group}&date={target_date}"
     return url
 
 
@@ -102,13 +113,18 @@ def get_rasp(tree):
             teacher = check_existing_css(j.css_first('.vt241'))
             auditorium = check_existing_css(j.css_first('.vt242'))
             type_lesson = check_existing_css(j.css_first('.vt243'))
-            dict_day[lesson_num].append(Lesson(lesson_num,title, teacher, auditorium, type_lesson))
+            dict_day[lesson_num].append(Lesson(lesson_num, title, teacher, auditorium, type_lesson))
         rasp_days_list_formated.append(dict_day)
     return rasp_days_list_formated
 
 
-def parse_schedule(group, week) -> (dict, list):
-    html = lk_func.connect(get_url(group, week))
+def parse_schedule(mode, group, week) -> (dict, list):
+    if mode == 'abs':
+        html = lk_func.connect(get_url_abs(group, week))
+    elif mode == 'rel':
+        html = lk_func.connect(get_url(group, week))
+    else:
+        return 'Режим не определен', 'Режим не определен'
     tree = HTMLParser(html)
     table = tree.css_first('div.vt236')
     if not table:
@@ -117,7 +133,6 @@ def parse_schedule(group, week) -> (dict, list):
     schedule_dict = get_rasp(table)
 
     return schedule_dict, days_list
-
 
 if __name__ == '__main__':
     start_time = time.time()

@@ -1,3 +1,4 @@
+from datetime import datetime
 from urllib.parse import urljoin
 
 import bot_token
@@ -17,6 +18,12 @@ headers = {
 
 start_lessons = ['09:00', '10:45', '13:00', '14:45', '16:30', '18:15', '20:00']
 end_lessons   = ['10:35', '12:20', '14:35', '16:20', '18:05', '19:50', '21:35']
+
+
+
+
+start_first_sem = datetime.strptime('10.02.2025', '%d.%m.%Y').date()
+start_second_sem = datetime.strptime('01.09.2025', '%d.%m.%Y').date()
 
 # токен бота
 api_token = bot_token.token
