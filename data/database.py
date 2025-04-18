@@ -40,7 +40,6 @@ def init_db():
                 sub BOOLEAN DEFAULT 0,
                 sub_end_date TEXT,
                 av_status BOOLEAN DEFAULT 1,
-                notifications BOOLEAN DEFAULT 1,
                 button_notifications BOOLEAN DEFAULT 1,
                 marked BOOLEAN DEFAULT 0,
                 user_group TEXT,
@@ -64,15 +63,34 @@ def init_db():
         group_id INTEGER NOT NULL)
         ''')
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS schedule_current_day (
+        CREATE TABLE IF NOT EXISTS schedule_today (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         group_name TEXT NOT NULL,
-        lesson_num INTEGER NOT NULL,
+        lesson_num TEXT NOT NULL,
         lesson_title TEXT NOT NULL,
         teacher TEXT,
         auditorium TEXT,
         lesson_type TEXT
         )''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        minutes_10 BOOLEAN DEFAULT 0,
+        minutes_15 BOOLEAN DEFAULT 0,
+        minutes_20 BOOLEAN DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )''')
+
+        # ---- Добавление триггера при котором при добавлении пользователя в users автоматически добавляется в уведомления ----
+        cursor.execute('''
+            CREATE TRIGGER IF NOT EXISTS create_notification_after_user_insert
+            AFTER INSERT ON users
+            BEGIN
+                INSERT INTO notifications (user_id, minutes_10, minutes_15, minutes_20)
+                VALUES (NEW.user_id, 0, 0, 0);
+            END;
+        ''')
+
         conn.commit()
     finally:
         conn.close()
@@ -368,7 +386,8 @@ def sw_subject_status(user_id: int, subject: str) -> bool:
         cursor.execute('SELECT status FROM subjects WHERE user_id = ? AND subject = ?', (user_id, subject))
         current_state = cursor.fetchone()[0]
         new_state = not current_state
-        cursor.execute('UPDATE subjects SET status = ? WHERE user_id = ? AND subject = ?', (new_state, user_id, subject))
+        cursor.execute('UPDATE subjects SET status = ? WHERE user_id = ? AND subject = ?',
+                       (new_state, user_id, subject))
         conn.commit()
         return new_state
     finally:

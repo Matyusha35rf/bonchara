@@ -88,7 +88,7 @@ def register_handlers(dp: Dispatcher):
 
     @dp.message(AuthStates.waiting_for_key)
     async def handle_subscription(message: types.Message, state: FSMContext):
-        if check_and_remove_key(os.path.join('..', 'keys.txt'), message.text):
+        if check_and_remove_key(os.path.join('keys.txt'), message.text):
             await message.answer("✅ Верный ключ\n")
             user_id = message.from_user.id
             database.sub(user_id, 1)
