@@ -1,6 +1,7 @@
+from datetime import datetime
 from pprint import pprint
 
-from lk.parsing_schedule import parse_schedule
+from lk.parsing_schedule import parse_schedule, Date
 from lk.match_groups import find_id_by_name
 
 
@@ -26,6 +27,7 @@ def get_schedule_by_id(mode, id_group, week):
 
 def get_schedule_by_name(mode, name_group, week):
     id_group = find_id_by_name(name_group)
+    print(id_group)
     if id_group is None:
         return None
     schedule = get_schedule_by_id(mode, id_group, week)
@@ -43,7 +45,6 @@ def get_schedule_current_day_by_id(mode, id_group, week, day_week):
 
 def get_schedule_current_day_by_name(mode, name_group, day_week):
     id_group = find_id_by_name(name_group)
-    print(id_group)
     schedule = get_schedule_by_id(mode, id_group, 0)
     if id_group is None:
         return None
@@ -52,26 +53,42 @@ def get_schedule_current_day_by_name(mode, name_group, day_week):
             return schedule[day]
 
 
-def write_db_schedule_current_day():
+def write_db_today_schedule():
     from data.database import connect
+    con, cur = connect()
+
+    cur.execute('''DELETE FROM schedule_today''')
+    cur.execute("DELETE FROM sqlite_sequence WHERE name = 'schedule_today'")
+    con.commit()
 
     week_rus = {'Monday': 'Понедельник',
-                'Tuesday': 'вторник',
-                'Wednesday': 'среда',
-                'Thursday': 'четверг',
-                'Friday': 'пятница',
-                'Saturday': 'суббота',
-                'Sunday': 'воскресенье'
+                'Tuesday': 'Вторник',
+                'Wednesday': 'Среда',
+                'Thursday': 'Четверг',
+                'Friday': 'Пятница',
+                'Saturday': 'Суббота',
+                'Sunday': 'Воскресенье'
                 }
-    con, cur = connect()
-    id_groups_set = set([data[0] for data in cur.execute("SELECT user_group FROM users").fetchall()])
-    for group in id_groups_set:
-        schedule = get_schedule_by_name('rel', group, 0)
+    week_now = week_rus[datetime.today().strftime('%A')]
 
-        
+    groups_set = set([data[0] for data in cur.execute("SELECT user_group FROM users").fetchall()])
+    for group in groups_set:
+        if group is None:
+            continue
+        schedule_d = get_schedule_by_name('rel', group, 0)
+        for day in schedule_d:
+            if day.day_week.lower() == week_now.lower():
+                for lesson in schedule_d[day]:
+                    if lesson.title is None:
+                        continue
+                    cur.execute(
+                        '''INSERT OR IGNORE INTO schedule_today (group_name, lesson_num,lesson_title, teacher, auditorium, lesson_type) VALUES (?,?,?,?,?,?)''',
+                        (group, lesson.lesson_num.lesson_num, lesson.title, lesson.teacher, lesson.auditorium,
+                         lesson.lesson_type))
+                    con.commit()
+        con.close()
 
 
 if __name__ == '__main__':
-    schedule = get_schedule_by_name('abs', 'ИСТ-341',1)
-    pprint(schedule)
-    # write_db_schedule_current_day()
+    schedule = get_schedule_by_name('abs', 'ИСТ-341', 1)
+    write_db_today_schedule()
