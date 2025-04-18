@@ -6,7 +6,6 @@ from aiogram import types, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 
-import data.database
 from data import database
 
 from bot import keyboards
@@ -49,9 +48,11 @@ def register_handlers(dp: Dispatcher):
         with requests.Session() as session:
             if lk_func.auth(session, data['email'], message.text)[0]:
                 prof = parsing_profile(session)
-                update_subjects(session, prof['Семестр'], data['user_id'])
-                database.add_to_db_reg(data['user_id'], data['username'], data['email'], message.text, prof['Группа'], prof['Семестр'])
-                await message.answer("✅ Успешная авторизация!", reply_markup=keyboards.main())
+                database.add_to_db_reg(data['user_id'], data['username'], data['email'], message.text, prof['Группа'],
+                                       prof['Семестр'])
+                await message.answer("✅ Успешная авторизация!", reply_markup=keyboards.profile())
+                await profile_message(message)
+                await update_subjects(message.from_user.id)
             else:
                 await message.answer("❌ Неверные данные. Попробуйте снова.", reply_markup=keyboards.connect())
 
@@ -178,7 +179,6 @@ def register_handlers(dp: Dispatcher):
             await callback.answer("❌ Предмет не найден")
             return
 
-        new_status = database.sw_subject_status(user_id, selected_subject)
         await callback.message.edit_reply_markup(
             reply_markup=keyboards.subject_settings_keyboard(
                 database.get_subjects_status(user_id)
@@ -189,8 +189,7 @@ def register_handlers(dp: Dispatcher):
     @dp.callback_query(lambda c: c.data == "refresh_subjects")
     async def refresh_subjects(callback: types.CallbackQuery):
         user_id = callback.from_user.id
-        group_name = data.database.get_user(user_id)["Группа"]
-        update_subjects(group_name)
+        await update_subjects(user_id)
         subjects = database.get_subjects_status(user_id)
         await callback.message.edit_text(
             "🔄 Список предметов обновлен:",

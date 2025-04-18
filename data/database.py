@@ -275,7 +275,6 @@ def get_users(cursor) -> list:
 
 def get_user(user_id):
     """
-    Получает данные пользователя из базы данных и возвращает их в виде словаря
 
     :param user_id: ID пользователя в Telegram
     :return: Словарь с данными пользователя или None, если пользователь не найден
@@ -322,7 +321,7 @@ def marked_on(con, cur, user_id: int):
     con.commit()
 
 
-def add_to_db_subjects(user_id: int, subjects: list):
+def add_to_db_subjects(user_id: int, subjects: set):
     """
     Добавляет предметы для пользователя.
 
@@ -333,9 +332,9 @@ def add_to_db_subjects(user_id: int, subjects: list):
     try:
         for subject in subjects:
             cur.execute('''
-                INSERT OR REPLACE INTO subjects (subject, user_id, status)
-                VALUES (?, ?, ?)
-            ''', (subject, user_id, 1))
+                INSERT OR REPLACE INTO subjects (subject, user_id)
+                VALUES (?, ?)
+            ''', (subject, user_id))
         conn.commit()
     finally:
         conn.close()

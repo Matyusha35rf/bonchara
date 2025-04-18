@@ -51,7 +51,7 @@ def av_settings():
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def subject_settings_keyboard(subjects, selected_subjects=None):
+def subject_settings_keyboard(subjects):
     buttons = []
     for subject, status in subjects.items():
         # Генерируем уникальный хеш для каждого предмета (8 символов)
