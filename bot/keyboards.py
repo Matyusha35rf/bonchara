@@ -20,7 +20,7 @@ def main() -> ReplyKeyboardMarkup:
 def profile() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🔙 Назад"), KeyboardButton(text="📝 Оформить подписку")]
+            [KeyboardButton(text="🔙 В главное меню"), KeyboardButton(text="📝 Оформить подписку")]
         ],
         resize_keyboard=True
     )
@@ -46,35 +46,21 @@ def sett():
 def av_settings():
     buttons = [
         [InlineKeyboardButton(text="🔄 Вкл/Выкл автопосещение", callback_data="av_sw")],
-        [InlineKeyboardButton(text="📝 Настроить список предметов", callback_data="subject_settings")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_settings")]
+        [InlineKeyboardButton(text="📝 Настроить автопосещение по предметам", callback_data="subject_settings")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def subject_settings_keyboard(subjects, selected_subjects=None, is_deletion_mode=False):
-    if selected_subjects is None:
-        selected_subjects = []
-
+def subject_settings_keyboard(subjects, selected_subjects=None):
     buttons = []
     for subject, status in subjects.items():
         # Генерируем уникальный хеш для каждого предмета (8 символов)
         subject_hash = md5(subject.encode()).hexdigest()[:8]
 
-        if is_deletion_mode:
-            prefix = "✅" if subject in selected_subjects else ""
-            text = f"{prefix} {subject}"
-        else:
-            status_icon = "🟢" if status else "🔴"
-            text = f"{status_icon} {subject}"
+        status_icon = "🟢" if status else "🔴"
+        text = f"{status_icon} {subject}"
         buttons.append([InlineKeyboardButton(text=text, callback_data=f"subj_{subject_hash}")])
 
-    if is_deletion_mode:
-        buttons.append([InlineKeyboardButton(text="✔️ Подтвердить выбор", callback_data="confirm_deletion")])
-    else:
-        buttons.append([InlineKeyboardButton(text="🔄 Обновить список предметов", callback_data="refresh_subjects")])
-        buttons.append(
-            [InlineKeyboardButton(text="🗑️ Удалить несуществующие дисциплины", callback_data="delete_nonexistent")])
-
+    buttons.append([InlineKeyboardButton(text="🔄 Обновить предметы", callback_data="refresh_subjects")])
     buttons.append([InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_autovisit")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

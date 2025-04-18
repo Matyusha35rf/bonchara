@@ -5,8 +5,8 @@ import requests
 from aiogram import types, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+import data.database
 from data import database
 
 from bot import keyboards
@@ -16,7 +16,7 @@ from bot.until import check_and_remove_key
 from datetime import datetime
 
 from lk import lk_func, parsing_profile
-from lk.update_subjects import update_subjects
+from app_functions.update_subjects import update_subjects
 from lk.parsing_profile import parsing_profile
 
 from hashlib import md5
@@ -83,33 +83,26 @@ def register_handlers(dp: Dispatcher):
     # Оформление подписки
     @dp.message(lambda m: m.text == "📝 Оформить подписку")
     async def subscription_message(message: types.Message, state: FSMContext):
-        await message.answer("📅 Введите ключ:", reply_markup=keyboards.back_to_profile())
         await state.set_state(AuthStates.waiting_for_key)
+        await message.answer("📅 Введите ключ:", reply_markup=keyboards.back_to_profile())
 
     @dp.message(AuthStates.waiting_for_key)
     async def handle_subscription(message: types.Message, state: FSMContext):
-        if check_and_remove_key(os.path.join('..', 'keys.txt'), message.text):
+        if check_and_remove_key(os.path.join('keys.txt'), message.text):
             await message.answer("✅ Верный ключ\n")
             user_id = message.from_user.id
             database.sub(user_id, 1)
+        elif message.text == "🔙 В главное меню":
+            await message.answer("🏠 Главное меню:", reply_markup=keyboards.main())
         else:
             await message.answer("❌ Неверный ключ")
-        await profile_message(message)
+            await profile_message(message)
         await state.clear()
 
     # настройки
     @dp.message(lambda m: m.text == "⚙️ Настройки")
     async def settings_message(message: types.Message):
         await message.answer("⚙️ Настройки:", reply_markup=keyboards.sett())
-        await message.answer("🔽 Используйте кнопку ниже для возврата в главное меню", reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="🔙 Назад")]],
-            resize_keyboard=True
-        ))
-
-    # 🔙 Назад (возврат в главное меню)
-    @dp.message(lambda m: m.text == "🔙 Назад")
-    async def back_to_main(message: types.Message):
-        await message.answer("🏠 Главное меню:", reply_markup=keyboards.main())
 
     @dp.callback_query(lambda c: c.data in ["toggle_notifications", "toggle_button_notifications"])
     async def toggle_callback(callback: types.CallbackQuery):
@@ -166,30 +159,12 @@ def register_handlers(dp: Dispatcher):
             "📚 Настройки предметов\nВыберите предметы для автопосещения:",
             reply_markup=keyboards.subject_settings_keyboard(subjects)
         )
-        await callback.answer()
-
-    # Обновление списка предметов
-    @dp.callback_query(lambda c: c.data == "refresh_subjects")
-    async def refresh_subjects_callback(callback: types.CallbackQuery):
-        user_id = callback.from_user.id
-        user = database.get_user(user_id)
-        with requests.Session() as session:
-            if lk_func.auth(session, user['email'], user['password'])[0]:
-                prof = parsing_profile(session)
-                update_subjects(session, prof['Семестр'], user_id)
-                subjects = database.get_subjects_status(user_id)
-                await callback.message.edit_text(
-                    "🔄 Список предметов обновлен:",
-                    reply_markup=keyboards.subject_settings_keyboard(subjects)
-                )
-        await callback.answer()
 
     # Обработчик для переключения статуса предмета
     @dp.callback_query(lambda c: c.data.startswith("subj_"))
-    async def subject_toggle_callback(callback: types.CallbackQuery, state: FSMContext):
+    async def subject_toggle_callback(callback: types.CallbackQuery):
         user_id = callback.from_user.id
         subject_hash = callback.data.replace("subj_", "")
-        data = await state.get_data()
 
         # Получаем предмет по хешу
         subjects = database.get_subjects_status(user_id)
@@ -203,96 +178,27 @@ def register_handlers(dp: Dispatcher):
             await callback.answer("❌ Предмет не найден")
             return
 
-        # Режим удаления
-        if data.get('is_deletion_mode', False):
-            selected_subjects = data.get('selected_subjects', [])
-
-            if selected_subject in selected_subjects:
-                selected_subjects.remove(selected_subject)
-            else:
-                selected_subjects.append(selected_subject)
-
-            await state.update_data(selected_subjects=selected_subjects)
-            await callback.message.edit_reply_markup(
-                reply_markup=keyboards.subject_settings_keyboard(
-                    subjects,
-                    selected_subjects,
-                    True
-                )
-            )
-        # Обычный режим (переключение статуса)
-        else:
-            new_status = database.sw_subject_status(user_id, selected_subject)
-            await callback.message.edit_reply_markup(
-                reply_markup=keyboards.subject_settings_keyboard(
-                    database.get_subjects_status(user_id)
-                )
-            )
-            await callback.answer(
-                f"Статус изменён: {'🟢 Вкл' if new_status else '🔴 Выкл'}"
-            )
-
-    # Режим удаления предметов
-    @dp.callback_query(lambda c: c.data == "delete_nonexistent")
-    async def delete_nonexistent_callback(callback: types.CallbackQuery, state: FSMContext):
-        user_id = callback.from_user.id
-        subjects = database.get_subjects_status(user_id)
-        await state.update_data(selected_subjects=[], is_deletion_mode=True)
-        await callback.message.edit_text(
-            "🗑️ Выберите предметы для удаления:",
-            reply_markup=keyboards.subject_settings_keyboard(subjects, [], True)
-        )
-        await callback.answer()
-
-    # Обработчик для режима удаления предметов
-    @dp.callback_query(lambda c: c.data.startswith("subject_"))
-    async def subject_deletion_callback(callback: types.CallbackQuery, state: FSMContext):
-        subject = callback.data.replace("subject_", "")
-        data = await state.get_data()
-
-        if not data.get('is_deletion_mode', False):
-            await callback.answer("❌ Неверный режим")
-            return
-
-        selected_subjects = data.get('selected_subjects', [])
-        if subject in selected_subjects:
-            selected_subjects.remove(subject)
-        else:
-            selected_subjects.append(subject)
-
-        await state.update_data(selected_subjects=selected_subjects)
-
-        # Обновляем клавиатуру
-        user_id = callback.from_user.id
-        subjects = database.get_subjects_status(user_id)
+        new_status = database.sw_subject_status(user_id, selected_subject)
         await callback.message.edit_reply_markup(
-            reply_markup=keyboards.subject_settings_keyboard(subjects, selected_subjects, True)
+            reply_markup=keyboards.subject_settings_keyboard(
+                database.get_subjects_status(user_id)
+            )
+        )
+
+    # Обновление списка предметов
+    @dp.callback_query(lambda c: c.data == "refresh_subjects")
+    async def refresh_subjects(callback: types.CallbackQuery):
+        user_id = callback.from_user.id
+        group_name = data.database.get_user(user_id)["Группа"]
+        update_subjects(group_name)
+        subjects = database.get_subjects_status(user_id)
+        await callback.message.edit_text(
+            "🔄 Список предметов обновлен:",
+            reply_markup=keyboards.subject_settings_keyboard(subjects)
         )
         await callback.answer()
 
-    # Подтверждение удаления
-    @dp.callback_query(lambda c: c.data == "confirm_deletion")
-    async def confirm_deletion_callback(callback: types.CallbackQuery, state: FSMContext):
-        data = await state.get_data()
-        selected_subjects = data.get('selected_subjects', [])
-        subjects = database.get_subjects_status(user_id=callback.from_user.id)
-        if selected_subjects:
-            database.del_subjects(callback.from_user.id, selected_subjects)
-            subjects = database.get_subjects_status(user_id=callback.from_user.id)
-            await callback.message.edit_text(
-                f"✅ Удалено {len(selected_subjects)} предметов",
-                reply_markup=keyboards.subject_settings_keyboard(subjects)
-            )
-        else:
-            await callback.message.edit_text(
-                "❌ Не выбрано ни одного предмета для удаления",
-                reply_markup=keyboards.subject_settings_keyboard(subjects)
-            )
-
-        await state.clear()
-        await callback.answer()
-
-    # Кнопки назад
+    # В настройки автопосещения
     @dp.callback_query(lambda c: c.data == "back_to_autovisit")
     async def back_to_autovisit_callback(callback: types.CallbackQuery, state: FSMContext):
         user_id = callback.from_user.id
@@ -304,11 +210,12 @@ def register_handlers(dp: Dispatcher):
         message_text = f"🤖 Настройки автопосещения\nТекущий статус: {status_text}"
         await callback.message.edit_text(message_text, reply_markup=keyboards.av_settings())
 
-    @dp.callback_query(lambda c: c.data == "back_to_settings")
-    async def back_to_settings_callback(callback: types.CallbackQuery, state: FSMContext):
+    # Кнопки назад
+    # 🔙 В главное меню
+    @dp.message(lambda m: m.text == "🔙 В главное меню")
+    async def back_to_main(message: types.Message, state: FSMContext):
         await state.clear()
-        await callback.message.edit_text("⚙️ Настройки:", reply_markup=keyboards.sett())
-        await callback.answer()
+        await message.answer("🏠 Главное меню:", reply_markup=keyboards.main())
 
     # Удаление аккаунта
     @dp.callback_query(lambda c: c.data == "delete_account")
