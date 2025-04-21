@@ -44,6 +44,8 @@ def get_schedule_current_day_by_id(mode, id_group, week, day_week):
 
 
 def get_schedule_current_day_by_name(mode, name_group, day_week):
+    weekdays_ru = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
+    day_week = weekdays_ru[day_week]
     id_group = find_id_by_name(name_group)
     schedule = get_schedule_by_id(mode, id_group, 0)
     if id_group is None:

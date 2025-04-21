@@ -6,17 +6,19 @@ from aiogram import types, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 
+import config
 from data import database
 
 from bot import keyboards
 from bot.states import AuthStates
 from bot.until import check_and_remove_key
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from lk import lk_func, parsing_profile
 from app_functions.update_subjects import update_subjects
 from lk.parsing_profile import parsing_profile
+from app_functions.schedule import schedule, work_with_data
 
 from hashlib import md5
 
@@ -85,7 +87,7 @@ def register_handlers(dp: Dispatcher):
     @dp.message(lambda m: m.text == "📝 Оформить подписку")
     async def subscription_message(message: types.Message, state: FSMContext):
         await state.set_state(AuthStates.waiting_for_key)
-        await message.answer("📅 Введите ключ:", reply_markup=keyboards.back_to_profile())
+        await message.answer("📅 Введите ключ:")
 
     @dp.message(AuthStates.waiting_for_key)
     async def handle_subscription(message: types.Message, state: FSMContext):
@@ -100,7 +102,141 @@ def register_handlers(dp: Dispatcher):
             await profile_message(message)
         await state.clear()
 
-    # настройки
+    # Расписание
+    @dp.message(lambda m: m.text == "🗓 Расписание")
+    async def schedule_message(message: types.Message):
+        await message.answer("Тип расписания:", reply_markup=keyboards.schedule_type())
+
+    # Расписание на сегодня
+    @dp.message(lambda m: m.text == "📅 Сегодня")
+    async def day_message(message: types.Message):
+        user_group = database.get_user(message.from_user.id)["user_group"]
+        day_number = datetime.today().weekday()
+        try:
+            lessons = schedule.get_schedule_current_day_by_name('rel', user_group, day_number)
+            work_with_data.get_current_semester_week(config.start_first_sem)
+            data = work_with_data.get_russian_date() + "\n"
+            data += str(work_with_data.get_current_semester_week(config.start_first_sem)) + " неделя"
+            result = data + "\n\n\n"
+
+            for lesson in lessons:
+                if lesson.title is not None:
+                    if lesson.lesson_num is not None:
+                        result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
+                                   str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
+                                   str(lesson.lesson_num.lesson_num) + ". ")
+                    if lesson.title is not None:
+                        result += str(lesson.title) + "\n"
+                    if lesson.lesson_type is not None:
+                        result += str(lesson.lesson_type) + "\n"
+                    if lesson.teacher is not None:
+                        result += str(lesson.teacher) + "\n"
+                    if lesson.auditorium is not None:
+                        aud = str(lesson.auditorium).replace("ауд.: ", "")
+                        result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
+            await message.answer(result)
+        except Exception as e:
+            await message.answer(f"Ошибка при получении расписания: {str(e)}")
+
+    # Расписание на завтра
+    @dp.message(lambda m: m.text == "➡️ Завтра")
+    async def next_day_message(message: types.Message):
+        offset = 1
+        user_group = database.get_user(message.from_user.id)["user_group"]
+        day_number = (datetime.today() + timedelta(days=offset)).weekday()
+        try:
+            lessons = schedule.get_schedule_current_day_by_name('rel', user_group, day_number)
+            work_with_data.get_current_semester_week(config.start_first_sem)
+            data = work_with_data.get_russian_date(offset) + "\n"
+            data += str(work_with_data.get_current_semester_week(config.start_first_sem)) + " неделя"
+            result = data + "\n\n\n"
+
+            for lesson in lessons:
+                if lesson.title is not None:
+                    if lesson.lesson_num is not None:
+                        result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
+                                   str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
+                                   str(lesson.lesson_num.lesson_num) + ". ")
+                    if lesson.title is not None:
+                        result += str(lesson.title) + "\n"
+                    if lesson.lesson_type is not None:
+                        result += str(lesson.lesson_type) + "\n"
+                    if lesson.teacher is not None:
+                        result += str(lesson.teacher) + "\n"
+                    if lesson.auditorium is not None:
+                        aud = str(lesson.auditorium).replace("ауд.: ", "")
+                        result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
+            await message.answer(result)
+        except Exception as e:
+            await message.answer(f"Ошибка при получении расписания: {str(e)}")
+
+    # Расписание на неделю
+    @dp.message(lambda m: m.text == "7️⃣ Эта неделя")
+    async def week_message(message: types.Message):
+        week_num = work_with_data.get_current_semester_week(config.start_first_sem)
+        user_group = database.get_user(message.from_user.id)["user_group"]
+        try:
+            week = schedule.get_schedule_by_name('abs', user_group, week_num)
+            data = str(week_num) + " неделя"
+            result = data + "\n\n"
+
+            for day in week:
+                if day.day_week is not None:
+                    result += "\n" + str(day) + "\n"
+                    lessons = week[day]
+                    for lesson in lessons:
+                        if lesson.title is not None:
+                            if lesson.lesson_num is not None:
+                                result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
+                                           str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
+                                           str(lesson.lesson_num.lesson_num) + ". ")
+                            if lesson.title is not None:
+                                result += str(lesson.title) + "\n"
+                            if lesson.lesson_type is not None:
+                                result += str(lesson.lesson_type) + "\n"
+                            if lesson.teacher is not None:
+                                result += str(lesson.teacher) + "\n"
+                            if lesson.auditorium is not None:
+                                aud = str(lesson.auditorium).replace("ауд.: ", "")
+                                result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
+            await message.answer(result)
+        except Exception as e:
+            await message.answer(f"Ошибка при получении расписания: {str(e)}")
+
+    # Расписание на следующую неделю
+    @dp.message(lambda m: m.text == "➡️ След неделя")
+    async def next_week_message(message: types.Message):
+        week_num = work_with_data.get_current_semester_week(config.start_first_sem) + 1
+        user_group = database.get_user(message.from_user.id)["user_group"]
+        try:
+            week = schedule.get_schedule_by_name('abs', user_group, week_num)
+            data = str(week_num) + " неделя"
+            result = data + "\n\n"
+
+            for day in week:
+                if day.day_week is not None:
+                    result += str(day) + "\n\n"
+                    lessons = week[day]
+                    for lesson in lessons:
+                        if lesson.title is not None:
+                            if lesson.lesson_num is not None:
+                                result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
+                                           str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
+                                           str(lesson.lesson_num.lesson_num) + ". ")
+                            if lesson.title is not None:
+                                result += str(lesson.title) + "\n"
+                            if lesson.lesson_type is not None:
+                                result += str(lesson.lesson_type) + "\n"
+                            if lesson.teacher is not None:
+                                result += str(lesson.teacher) + "\n"
+                            if lesson.auditorium is not None:
+                                aud = str(lesson.auditorium).replace("ауд.: ", "")
+                                result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
+            await message.answer(result)
+        except Exception as e:
+            await message.answer(f"Ошибка при получении расписания: {str(e)}")
+
+    # Настройки
     @dp.message(lambda m: m.text == "⚙️ Настройки")
     async def settings_message(message: types.Message):
         await message.answer("⚙️ Настройки:", reply_markup=keyboards.sett())

@@ -8,29 +8,27 @@ def connect() -> InlineKeyboardMarkup:
 
 
 def main() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
+    buttons = [
             [KeyboardButton(text="👤 Профиль")],
-            [KeyboardButton(text="⚙️ Настройки")]
-        ],
-        resize_keyboard=True
-    )
+            [KeyboardButton(text="🗓 Расписание"), KeyboardButton(text="⚙️ Настройки")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
+
+
+def schedule_type() -> ReplyKeyboardMarkup:
+    buttons = [
+        [KeyboardButton(text="📅 Сегодня"), KeyboardButton(text="➡️ Завтра")],
+        [KeyboardButton(text="7️⃣ Эта неделя"), KeyboardButton(text="➡️ След неделя")],
+        [KeyboardButton(text="🔙 В главное меню")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
 def profile() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🔙 В главное меню"), KeyboardButton(text="📝 Оформить подписку")]
-        ],
-        resize_keyboard=True
-    )
-
-
-def back_to_profile() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="🔙 Назад в профиль")]],
-        resize_keyboard=True
-    )
+    buttons = [
+        [KeyboardButton(text="🔙 В главное меню"), KeyboardButton(text="📝 Оформить подписку")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
 def sett():

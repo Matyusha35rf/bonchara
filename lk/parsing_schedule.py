@@ -1,6 +1,6 @@
 import re
 import time
-from datetime import datetime
+from datetime import datetime, date
 from datetime import timedelta
 from pprint import pprint
 
@@ -66,7 +66,7 @@ class LessonNum:
 
 
 def delta_date(date, week):
-    print(week)
+    #print(week)
     delta_week = timedelta(weeks=week)
     date += delta_week
     date = date.strftime('%Y-%m-%d')

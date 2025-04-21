@@ -21,7 +21,6 @@ async def update_subjects(user_id):
             subjects_add = subjects_new - subjects_old
             database.del_subjects(user_id, subjects_del)
             database.add_to_db_subjects(user_id, subjects_add)
-
     except Exception as e:
         print(f"Ошибка в обновлении предметов:{e}")
 
