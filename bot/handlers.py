@@ -3,6 +3,7 @@ import os
 import requests
 
 from aiogram import types, Dispatcher
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 
@@ -12,7 +13,7 @@ from data import database
 from bot import keyboards
 from bot.states import AuthStates
 from bot.until import check_and_remove_key
-
+from bot.bot_templates import schedule_message_templates
 from datetime import datetime, timedelta
 
 from lk import lk_func, parsing_profile
@@ -110,129 +111,36 @@ def register_handlers(dp: Dispatcher):
     # Расписание на сегодня
     @dp.message(lambda m: m.text == "📅 Сегодня")
     async def day_message(message: types.Message):
-        user_group = database.get_user(message.from_user.id)["user_group"]
-        day_number = datetime.today().weekday()
         try:
-            lessons = schedule.get_schedule_current_day_by_name('rel', user_group, day_number)
-            work_with_data.get_current_semester_week(config.start_first_sem)
-            data = work_with_data.get_russian_date() + "\n"
-            data += str(work_with_data.get_current_semester_week(config.start_first_sem)) + " неделя"
-            result = data + "\n\n\n"
-
-            for lesson in lessons:
-                if lesson.title is not None:
-                    if lesson.lesson_num is not None:
-                        result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
-                                   str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
-                                   str(lesson.lesson_num.lesson_num) + ". ")
-                    if lesson.title is not None:
-                        result += str(lesson.title) + "\n"
-                    if lesson.lesson_type is not None:
-                        result += str(lesson.lesson_type) + "\n"
-                    if lesson.teacher is not None:
-                        result += str(lesson.teacher) + "\n"
-                    if lesson.auditorium is not None:
-                        aud = str(lesson.auditorium).replace("ауд.: ", "")
-                        result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
-            await message.answer(result)
+            result = schedule_message_templates(message.from_user.id, "day", 0)
+            await message.answer(result, parse_mode=ParseMode.HTML)
         except Exception as e:
             await message.answer(f"Ошибка при получении расписания: {str(e)}")
 
     # Расписание на завтра
     @dp.message(lambda m: m.text == "➡️ Завтра")
     async def next_day_message(message: types.Message):
-        offset = 1
-        user_group = database.get_user(message.from_user.id)["user_group"]
-        day_number = (datetime.today() + timedelta(days=offset)).weekday()
         try:
-            lessons = schedule.get_schedule_current_day_by_name('rel', user_group, day_number)
-            work_with_data.get_current_semester_week(config.start_first_sem)
-            data = work_with_data.get_russian_date(offset) + "\n"
-            data += str(work_with_data.get_current_semester_week(config.start_first_sem)) + " неделя"
-            result = data + "\n\n\n"
-
-            for lesson in lessons:
-                if lesson.title is not None:
-                    if lesson.lesson_num is not None:
-                        result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
-                                   str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
-                                   str(lesson.lesson_num.lesson_num) + ". ")
-                    if lesson.title is not None:
-                        result += str(lesson.title) + "\n"
-                    if lesson.lesson_type is not None:
-                        result += str(lesson.lesson_type) + "\n"
-                    if lesson.teacher is not None:
-                        result += str(lesson.teacher) + "\n"
-                    if lesson.auditorium is not None:
-                        aud = str(lesson.auditorium).replace("ауд.: ", "")
-                        result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
-            await message.answer(result)
+            result = schedule_message_templates(message.from_user.id, "day", 1)
+            await message.answer(result, parse_mode=ParseMode.HTML)
         except Exception as e:
             await message.answer(f"Ошибка при получении расписания: {str(e)}")
 
     # Расписание на неделю
     @dp.message(lambda m: m.text == "7️⃣ Эта неделя")
     async def week_message(message: types.Message):
-        week_num = work_with_data.get_current_semester_week(config.start_first_sem)
-        user_group = database.get_user(message.from_user.id)["user_group"]
         try:
-            week = schedule.get_schedule_by_name('abs', user_group, week_num)
-            data = str(week_num) + " неделя"
-            result = data + "\n\n"
-
-            for day in week:
-                if day.day_week is not None:
-                    result += "\n" + str(day) + "\n"
-                    lessons = week[day]
-                    for lesson in lessons:
-                        if lesson.title is not None:
-                            if lesson.lesson_num is not None:
-                                result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
-                                           str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
-                                           str(lesson.lesson_num.lesson_num) + ". ")
-                            if lesson.title is not None:
-                                result += str(lesson.title) + "\n"
-                            if lesson.lesson_type is not None:
-                                result += str(lesson.lesson_type) + "\n"
-                            if lesson.teacher is not None:
-                                result += str(lesson.teacher) + "\n"
-                            if lesson.auditorium is not None:
-                                aud = str(lesson.auditorium).replace("ауд.: ", "")
-                                result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
-            await message.answer(result)
+            result = schedule_message_templates(message.from_user.id, "week", 0)
+            await message.answer(result, parse_mode=ParseMode.HTML)
         except Exception as e:
             await message.answer(f"Ошибка при получении расписания: {str(e)}")
 
     # Расписание на следующую неделю
     @dp.message(lambda m: m.text == "➡️ След неделя")
     async def next_week_message(message: types.Message):
-        week_num = work_with_data.get_current_semester_week(config.start_first_sem) + 1
-        user_group = database.get_user(message.from_user.id)["user_group"]
         try:
-            week = schedule.get_schedule_by_name('abs', user_group, week_num)
-            data = str(week_num) + " неделя"
-            result = data + "\n\n"
-
-            for day in week:
-                if day.day_week is not None:
-                    result += str(day) + "\n\n"
-                    lessons = week[day]
-                    for lesson in lessons:
-                        if lesson.title is not None:
-                            if lesson.lesson_num is not None:
-                                result += (str(lesson.lesson_num.start_time).lstrip("0") + "–" +
-                                           str(lesson.lesson_num.end_time).lstrip("0") + "\n" +
-                                           str(lesson.lesson_num.lesson_num) + ". ")
-                            if lesson.title is not None:
-                                result += str(lesson.title) + "\n"
-                            if lesson.lesson_type is not None:
-                                result += str(lesson.lesson_type) + "\n"
-                            if lesson.teacher is not None:
-                                result += str(lesson.teacher) + "\n"
-                            if lesson.auditorium is not None:
-                                aud = str(lesson.auditorium).replace("ауд.: ", "")
-                                result += aud.replace("; Б22/2", "/2").replace("; Б22/1", "/1") + "\n\n"
-            await message.answer(result)
+            result = schedule_message_templates(message.from_user.id, "week", 1)
+            await message.answer(result, parse_mode=ParseMode.HTML)
         except Exception as e:
             await message.answer(f"Ошибка при получении расписания: {str(e)}")
 
