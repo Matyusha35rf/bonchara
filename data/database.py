@@ -2,6 +2,8 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 
+import lk.match_groups
+
 # Определение путей к базам данных
 script_dir = os.path.dirname(os.path.abspath(__file__))
 db_path = os.path.normpath(os.path.join(script_dir, '..', 'data', 'users.db'))
@@ -63,6 +65,8 @@ def init_db():
         group_name TEXT UNIQUE NOT NULL,
         group_id INTEGER NOT NULL)
         ''')
+        lk.match_groups.write_db()
+
 
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS schedule_today (

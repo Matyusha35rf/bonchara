@@ -51,11 +51,18 @@ def connect_session(url, session):
             print(response.status_code)
 
 
-def get_number_lesson(time):
-    for i in range(len(config.start_lessons)):
-        if datetime.strptime(config.start_lessons[i], '%H:%M').time() <= datetime.strptime(time, '%H:%M').time() <= datetime.strptime(
+def get_number_lesson(time, mode='regular'):
+    if mode == 'regular':
+        time_arr = config.start_lessons
+    elif mode == 'marking':
+        time_arr = config.marking_time
+    else:
+        return -1
+    for i in range(len(time_arr)):
+        if datetime.strptime(time_arr[i], '%H:%M').time() <= datetime.strptime(time, '%H:%M').time() <= datetime.strptime(
             config.end_lessons[i], '%H:%M').time():
-            return i
-    return None
+            return i+1
+    return -1
+
 
 
