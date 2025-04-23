@@ -2,25 +2,22 @@ import os
 
 import requests
 
-from typing import Union
 from aiogram import types, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 
-import config
 from data import database
 
 from bot import keyboards
 from bot.states import AuthStates
 from bot.until import check_and_remove_key
 from bot.bot_templates import schedule_message_templates
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from lk import lk_func, parsing_profile
 from app_functions.update_subjects import update_subjects
 from lk.parsing_profile import parsing_profile
-from app_functions.schedule import schedule, work_with_data
 
 from hashlib import md5
 
