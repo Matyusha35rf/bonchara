@@ -1,10 +1,24 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from hashlib import md5
 
+
 def connect() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🔑 Подключиться", callback_data="connect")]]
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🔑 Подключиться", callback_data="connect"),
+                InlineKeyboardButton(text="🧪 Тест-режим", callback_data="test_mode")
+            ]
+        ]
     )
+
+
+def yes_no_recon() -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text="Да", callback_data="delete_acc"),
+         InlineKeyboardButton(text="Нет", callback_data="main")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def main() -> ReplyKeyboardMarkup:
@@ -36,7 +50,7 @@ def sett():
         [InlineKeyboardButton(text="🔔 Уведомления", callback_data="toggle_notifications")],
         [InlineKeyboardButton(text="🔄 Уведомления о нажатии кнопки", callback_data="toggle_button_notifications")],
         [InlineKeyboardButton(text="🤖 Настройки автопосещения", callback_data="av_setting")],
-        [InlineKeyboardButton(text="🗑️ Удалить аккаунт", callback_data="delete_account")]
+        [InlineKeyboardButton(text="🗑️ Удалить аккаунт", callback_data="delete_acc")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

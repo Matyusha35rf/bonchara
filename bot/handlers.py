@@ -2,6 +2,7 @@ import os
 
 import requests
 
+from typing import Union
 from aiogram import types, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
@@ -29,7 +30,14 @@ def register_handlers(dp: Dispatcher):
     # Обработка команды /start
     @dp.message(Command("start"))
     async def start_command(message: types.Message):
-        await message.answer("👋 Привет! Чтобы подключиться, нажмите кнопку ниже.", reply_markup=keyboards.connect())
+        con, cur = database.connect()
+        users = database.get_users(cur)
+        user_id = message.from_user.id
+        for user in users:
+            if user_id == user["user_id"]:
+                await message.answer("❓ Вы уже были подключены ранее, хотите начать подключение заново?", reply_markup=keyboards.yes_no_recon())
+                return
+        await message.answer("👋 Привет! Чтобы подключиться, нажмите кнопку Подключиться или кнопку Тест-режим, чтобы ознакомиться с функционалом", reply_markup=keyboards.connect())
 
     # Подключение пользователя
     @dp.callback_query(lambda c: c.data == "connect")
@@ -60,6 +68,28 @@ def register_handlers(dp: Dispatcher):
                 await message.answer("❌ Неверные данные. Попробуйте снова.", reply_markup=keyboards.connect())
 
             await state.clear()
+
+    @dp.callback_query(lambda c: c.data == "test_mode")
+    async def test_mode_callback(callback: types.CallbackQuery):
+        user_id = callback.from_user.id
+        username = callback.from_user.username
+
+        # Задаем тестовые данные
+        test_data = {
+            'email': 'mosenkov16@mail.ru',
+            'password': 'i5jRHseAQjaS',
+            'group': 'ИСТ-341',
+            'semester': 4
+        }
+
+        # Добавляем пользователя в базу с тестовыми данными
+        database.add_to_db_reg(user_id, username, test_data['email'], test_data['password'], test_data['group'], test_data['semester'])
+
+        await update_subjects(user_id)
+        await callback.message.answer(
+            "🔧 Вы включили тестовый режим. Теперь вы можете ознакомиться с функционалом бота.",
+            reply_markup=keyboards.main()
+        )
 
     # 📄 Отображение профиля
     @dp.message(lambda m: m.text == "👤 Профиль" or m.text == "🔙 Назад в профиль")
@@ -171,13 +201,12 @@ def register_handlers(dp: Dispatcher):
         user_id = callback.from_user.id
         action = callback.data  # "av_settings", "av_sw" и т.д.
 
-        # Проверка подписки
-        if not database.is_sub_activ(user_id):
-            await callback.answer("❌ Требуется активная подписка", show_alert=True)
-            return
-
         # Обработка переключения статуса
         if action == "av_sw":
+            # Проверка подписки
+            if not database.is_sub_activ(user_id):
+                await callback.answer("❌ Требуется активная подписка", show_alert=True)
+                return
             new_status = database.sw_av(user_id)
             status_text = "🟢 Включено" if new_status else "🔴 Выключено"
             await callback.answer(f"Статус изменён: {status_text}")
@@ -195,9 +224,6 @@ def register_handlers(dp: Dispatcher):
     @dp.callback_query(lambda c: c.data == "subject_settings")
     async def subject_settings_callback(callback: types.CallbackQuery):
         user_id = callback.from_user.id
-        if not database.is_sub_activ(user_id):
-            await callback.answer("❌ У вас нет активной подписки.", show_alert=True)
-            return
 
         subjects = database.get_subjects_status(user_id)
         await callback.message.edit_text(
@@ -223,10 +249,15 @@ def register_handlers(dp: Dispatcher):
             await callback.answer("❌ Предмет не найден")
             return
 
+        # Изменяем статус предмета
+        database.sw_subject_status(user_id, selected_subject)
+
+        # Получаем обновленный список предметов
+        updated_subjects = database.get_subjects_status(user_id)
+
+        # Обновляем клавиатуру с новыми данными
         await callback.message.edit_reply_markup(
-            reply_markup=keyboards.subject_settings_keyboard(
-                database.get_subjects_status(user_id)
-            )
+            reply_markup=keyboards.subject_settings_keyboard(updated_subjects)
         )
 
     # Обновление списка предметов
@@ -256,12 +287,22 @@ def register_handlers(dp: Dispatcher):
     # Кнопки назад
     # 🔙 В главное меню
     @dp.message(lambda m: m.text == "🔙 В главное меню")
-    async def back_to_main(message: types.Message, state: FSMContext):
+    async def back_to_main(message, state: FSMContext):
         await state.clear()
         await message.answer("🏠 Главное меню:", reply_markup=keyboards.main())
 
+    @dp.callback_query(lambda c: c.data == "main")
+    async def open_reply_menu(call: types.CallbackQuery, state: FSMContext):
+        await state.clear()
+
+        # 1. Удаляем сообщение с inline-кнопкой (если нужно)
+        await call.message.delete()
+
+        await call.message.answer("🏠 Главное меню:", reply_markup=keyboards.main())
+        await call.answer()  # Убираем "часики" у кнопки
+
     # Удаление аккаунта
-    @dp.callback_query(lambda c: c.data == "delete_account")
+    @dp.callback_query(lambda c: c.data == "delete_acc")
     async def delete_account_callback(callback: types.CallbackQuery):
         database.del_acc(callback.from_user.id)
         await callback.message.answer("🗑️ Аккаунт удален. Хотите снова подключиться?",
