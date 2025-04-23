@@ -4,6 +4,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from bot.handlers import register_handlers  # Импортируем функцию для регистрации обработчиков
 import config
 
+
 bot = Bot(token=config.api_token)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)  # Создаем диспетчер

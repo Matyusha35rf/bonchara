@@ -261,6 +261,11 @@ def register_handlers(dp: Dispatcher):
     @dp.callback_query(lambda c: c.data == "refresh_subjects")
     async def refresh_subjects(callback: types.CallbackQuery):
         user_id = callback.from_user.id
+
+        if not database.is_sub_activ(user_id):
+            await callback.answer("❌ Требуется активная подписка", show_alert=True)
+            return
+
         await update_subjects(user_id)
         subjects = database.get_subjects_status(user_id)
         await callback.message.edit_text(
